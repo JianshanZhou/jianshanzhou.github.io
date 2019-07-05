@@ -1,0 +1,354 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>test_ALM_alg</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-05-29"><meta name="DC.source" content="test_ALM_alg.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Test Augmented Lagrangian method</a></li><li><a href="#2">Construct the nonlinear constrained problem</a></li><li><a href="#3">Setting Up and Solving the Problem with a Local Solver</a></li><li><a href="#4">Initial algorithm parameters</a></li><li><a href="#5">Run the test</a></li><li><a href="#6">Compare the methods</a></li></ul></div><h2 id="1">Test Augmented Lagrangian method</h2><pre class="codeinput">clear
+close <span class="string">all</span>
+clc
+
+rng(4,<span class="string">'twister'</span>) <span class="comment">% for reproducibility</span>
+</pre><h2 id="2">Construct the nonlinear constrained problem</h2><p>Frequency is proportional to the number of peaks</p><pre class="codeinput">relFreqConst = 2*pi*2.5;
+amp = 2.2;
+phase = -[0; 0.54; 2.07];
+
+numSources = 3;
+height = 3;
+
+<span class="comment">% All point sources are aligned at [x_i,y_i,z]</span>
+xcoords = [2.4112
+           0.2064
+           1.6787];
+ycoords = [0.3957
+           0.3927
+           0.9877];
+zcoords = height*ones(numSources,1);
+
+origins = [xcoords ycoords zcoords];
+
+<span class="comment">% Construct the objective function.</span>
+<span class="comment">% Pass additional parameters via an anonymous function:</span>
+waveIntensity_x = @(x) waveIntensity(x,amp,phase, <span class="keyword">...</span>
+    relFreqConst,numSources,origins);
+
+<span class="comment">% Construct the inequality constraints</span>
+ineqConsNum = 7;
+ineqCons = cell(ineqConsNum, 1);
+
+g1 = @(x,y)  (x-xcoords(1)).^2 + (y-ycoords(1)).^2 - 9;
+g2 = @(x,y)  (x-xcoords(2)).^2 + (y-ycoords(2)).^2 - 9;
+g3 = @(x,y)  (x-xcoords(3)).^2 + (y-ycoords(3)).^2 - 9;
+ineqCons{1} = @(x)-g1(x(1), x(2));
+ineqCons{2} = @(x)-g2(x(1), x(2));
+ineqCons{3} = @(x)-g3(x(1), x(2));
+
+lb = [-0.5; -2];
+ub = [3.5; 3];
+ineqCons{4} = @(x)(x(1) - lb(1));
+ineqCons{5} = @(x)(ub(1) - x(1));
+ineqCons{6} = @(x)(x(2) - lb(2));
+ineqCons{7} = @(x)(ub(2) - x(2));
+
+<span class="comment">% Construct the equality constraints</span>
+eqConsNum = 0;
+eqCons = {};
+</pre><h2 id="3">Setting Up and Solving the Problem with a Local Solver</h2><p>Given the nonlinear constraints, we need a constrained nonlinear solver, namely, <tt>fmincon</tt>.</p><p>Let's set up a problem structure describing our optimization problem. We want to maximize the intensity function, so we negate the values returned form <tt>waveIntensity</tt>. Let's choose an arbitrary start point that happens to be near the feasible region.</p><p>For this small problem, we'll use <tt>fmincon</tt>'s SQP algorithm.</p><pre class="codeinput"><span class="comment">% Pass additional parameters via an anonymous function:</span>
+apertureConstraint_x = @(x) apertureConstraint(x,xcoords,ycoords);
+
+<span class="comment">% Set up fmincon's options</span>
+x0 = [3 -1];
+opts = optimoptions(<span class="string">'fmincon'</span>,<span class="string">'Algorithm'</span>,<span class="string">'sqp'</span>);
+problem = createOptimProblem(<span class="string">'fmincon'</span>,<span class="string">'objective'</span>, <span class="keyword">...</span>
+    @(x) -waveIntensity_x(x),<span class="string">'x0'</span>,x0,<span class="string">'lb'</span>,lb,<span class="string">'ub'</span>,ub, <span class="keyword">...</span>
+    <span class="string">'nonlcon'</span>,apertureConstraint_x,<span class="string">'options'</span>,opts);
+
+<span class="comment">% Call fmincon</span>
+[xlocal,fvallocal] = fmincon(problem)
+</pre><pre class="codeoutput">
+Local minimum found that satisfies the constraints.
+
+Optimization completed because the objective function is non-decreasing in 
+feasible directions, to within the default value of the optimality tolerance,
+and constraints are satisfied to within the default value of the constraint tolerance.
+
+
+
+
+xlocal =
+
+   -0.5000    0.4945
+
+
+fvallocal =
+
+   -1.4438
+
+</pre><h2 id="4">Initial algorithm parameters</h2><pre class="codeinput">nvars = 2;
+w = ones(ineqConsNum, 1).*1.3;
+v = ones(eqConsNum, 1).*1.3;
+sigma = 3;
+epsilon = 1e-6;
+alpha = 1.3;
+beta = 0.5;
+maxIter = 1000;
+</pre><h2 id="5">Run the test</h2><p>Transform the maximum objective to the minimum objective</p><pre class="codeinput">objFcn = @(x)-waveIntensity_x(x);
+<span class="comment">% The initial estimate of the solution.</span>
+x0 = [0.5; 0.5];
+[x, fval] = ALM_alg(objFcn, x0, nvars, <span class="keyword">...</span>
+    eqCons, eqConsNum, ineqCons, ineqConsNum, w, v, sigma, <span class="keyword">...</span>
+    epsilon, alpha, beta, lb, ub, maxIter)
+</pre><pre class="codeoutput">
+x =
+
+    1.2592    0.4284
+
+
+fval =
+
+   -4.3702
+
+</pre><h2 id="6">Compare the methods</h2><pre class="codeinput">domain = [-4 5.5 -4 5];
+[X,Y] = meshgrid(domain(1):0.035:domain(2),<span class="keyword">...</span>
+    domain(3):0.035:domain(4));
+<span class="comment">% Compute the intensity over the grid</span>
+Z = arrayfun(@(x,y) waveIntensity_x([x y]),X,Y);
+
+<span class="comment">% Visualize the contours of our interference surface</span>
+figure
+contour(X,Y,Z);
+hold <span class="string">on</span>
+
+<span class="comment">% Plot PSO results using a circle marker</span>
+P1 = scatter(x(1), x(2), <span class="string">'o'</span>, <span class="keyword">...</span>
+    <span class="string">'MarkerFaceColor'</span>, <span class="string">'r'</span>, <span class="string">'MarkerEdgeColor'</span>,[1 0 0],<span class="string">'LineWidth'</span>,1.25);
+
+P2 = scatter(xlocal(1), xlocal(2), <span class="string">'s'</span>, <span class="keyword">...</span>
+    <span class="string">'MarkerFaceColor'</span>, <span class="string">'b'</span>, <span class="string">'MarkerEdgeColor'</span>,[0 0 1],<span class="string">'LineWidth'</span>,1.25);
+
+<span class="comment">% Plot constraints</span>
+h1 = ezplot(g1,domain);
+h1.Color = [0.8 0.7 0.1]; <span class="comment">% yellow</span>
+h1.LineWidth = 1.5;
+h2 = ezplot(g2,domain);
+h2.Color = [0.3 0.7 0.5]; <span class="comment">% green</span>
+h2.LineWidth = 1.5;
+h3 = ezplot(g3,domain);
+h3.Color = [0.4 0.4 0.6]; <span class="comment">% blue</span>
+h3.LineWidth = 1.5;
+
+<span class="comment">% Plot bounds</span>
+line([lb(1) lb(1)],[lb(2) ub(2)],<span class="string">'LineStyle'</span>,<span class="string">'--'</span>)
+line([ub(1) ub(1)],[lb(2) ub(2)],<span class="string">'LineStyle'</span>,<span class="string">'--'</span>)
+line([lb(1) ub(1)],[lb(2) lb(2)],<span class="string">'LineStyle'</span>,<span class="string">'--'</span>)
+line([lb(1) ub(1)],[ub(2) ub(2)],<span class="string">'LineStyle'</span>,<span class="string">'--'</span>)
+
+axis(domain);
+
+legend([P1, P2],{<span class="string">'Augmented Lagrangian Method'</span>, <span class="string">'MATLAB:fmincon()'</span>}, <span class="string">'Location'</span>,<span class="string">'best'</span>);
+
+title(<span class="string">'Pattern Contours with Constraint Boundaries'</span>)
+</pre><img vspace="5" hspace="5" src="test_ALM_alg_01.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test Augmented Lagrangian method
+clear
+close all
+clc
+
+rng(4,'twister') % for reproducibility
+%% Construct the nonlinear constrained problem
+% Frequency is proportional to the number of peaks
+relFreqConst = 2*pi*2.5;
+amp = 2.2;
+phase = -[0; 0.54; 2.07];
+
+numSources = 3;
+height = 3;
+
+% All point sources are aligned at [x_i,y_i,z]
+xcoords = [2.4112
+           0.2064
+           1.6787];
+ycoords = [0.3957
+           0.3927
+           0.9877];
+zcoords = height*ones(numSources,1);          
+
+origins = [xcoords ycoords zcoords];
+
+% Construct the objective function.
+% Pass additional parameters via an anonymous function:
+waveIntensity_x = @(x) waveIntensity(x,amp,phase, ...
+    relFreqConst,numSources,origins);
+
+% Construct the inequality constraints
+ineqConsNum = 7;
+ineqCons = cell(ineqConsNum, 1);
+
+g1 = @(x,y)  (x-xcoords(1)).^2 + (y-ycoords(1)).^2 - 9;
+g2 = @(x,y)  (x-xcoords(2)).^2 + (y-ycoords(2)).^2 - 9;
+g3 = @(x,y)  (x-xcoords(3)).^2 + (y-ycoords(3)).^2 - 9;
+ineqCons{1} = @(x)-g1(x(1), x(2));
+ineqCons{2} = @(x)-g2(x(1), x(2));
+ineqCons{3} = @(x)-g3(x(1), x(2));
+
+lb = [-0.5; -2];
+ub = [3.5; 3];
+ineqCons{4} = @(x)(x(1) - lb(1));
+ineqCons{5} = @(x)(ub(1) - x(1));
+ineqCons{6} = @(x)(x(2) - lb(2));
+ineqCons{7} = @(x)(ub(2) - x(2));
+
+% Construct the equality constraints
+eqConsNum = 0;
+eqCons = {};
+
+%% Setting Up and Solving the Problem with a Local Solver
+% Given the nonlinear constraints, we need a constrained nonlinear solver,
+% namely, |fmincon|. 
+%
+% Let's set up a problem structure describing our optimization problem. We
+% want to maximize the intensity function, so we negate the values returned
+% form |waveIntensity|. Let's choose an arbitrary start point that happens
+% to be near the feasible region. 
+%
+% For this small problem, we'll use |fmincon|'s SQP algorithm.
+
+% Pass additional parameters via an anonymous function:
+apertureConstraint_x = @(x) apertureConstraint(x,xcoords,ycoords);
+
+% Set up fmincon's options
+x0 = [3 -1];
+opts = optimoptions('fmincon','Algorithm','sqp');
+problem = createOptimProblem('fmincon','objective', ...
+    @(x) -waveIntensity_x(x),'x0',x0,'lb',lb,'ub',ub, ...
+    'nonlcon',apertureConstraint_x,'options',opts);
+
+% Call fmincon
+[xlocal,fvallocal] = fmincon(problem)
+
+%% Initial algorithm parameters
+nvars = 2;
+w = ones(ineqConsNum, 1).*1.3;
+v = ones(eqConsNum, 1).*1.3;
+sigma = 3;
+epsilon = 1e-6;
+alpha = 1.3;
+beta = 0.5;
+maxIter = 1000;
+
+%% Run the test
+% Transform the maximum objective to the minimum objective
+objFcn = @(x)-waveIntensity_x(x);
+% The initial estimate of the solution.
+x0 = [0.5; 0.5];
+[x, fval] = ALM_alg(objFcn, x0, nvars, ...
+    eqCons, eqConsNum, ineqCons, ineqConsNum, w, v, sigma, ...
+    epsilon, alpha, beta, lb, ub, maxIter)
+
+%% Compare the methods
+domain = [-4 5.5 -4 5];
+[X,Y] = meshgrid(domain(1):0.035:domain(2),...
+    domain(3):0.035:domain(4));
+% Compute the intensity over the grid
+Z = arrayfun(@(x,y) waveIntensity_x([x y]),X,Y);
+
+% Visualize the contours of our interference surface
+figure
+contour(X,Y,Z);
+hold on
+
+% Plot PSO results using a circle marker
+P1 = scatter(x(1), x(2), 'o', ...
+    'MarkerFaceColor', 'r', 'MarkerEdgeColor',[1 0 0],'LineWidth',1.25);
+
+P2 = scatter(xlocal(1), xlocal(2), 's', ...
+    'MarkerFaceColor', 'b', 'MarkerEdgeColor',[0 0 1],'LineWidth',1.25);
+
+% Plot constraints
+h1 = ezplot(g1,domain);
+h1.Color = [0.8 0.7 0.1]; % yellow
+h1.LineWidth = 1.5;
+h2 = ezplot(g2,domain);
+h2.Color = [0.3 0.7 0.5]; % green
+h2.LineWidth = 1.5;
+h3 = ezplot(g3,domain);
+h3.Color = [0.4 0.4 0.6]; % blue
+h3.LineWidth = 1.5;
+
+% Plot bounds
+line([lb(1) lb(1)],[lb(2) ub(2)],'LineStyle','REPLACE_WITH_DASH_DASH')
+line([ub(1) ub(1)],[lb(2) ub(2)],'LineStyle','REPLACE_WITH_DASH_DASH')
+line([lb(1) ub(1)],[lb(2) lb(2)],'LineStyle','REPLACE_WITH_DASH_DASH')
+line([lb(1) ub(1)],[ub(2) ub(2)],'LineStyle','REPLACE_WITH_DASH_DASH')
+
+axis(domain);
+
+legend([P1, P2],{'Augmented Lagrangian Method', 'MATLAB:fmincon()'}, 'Location','best');
+
+title('Pattern Contours with Constraint Boundaries')
+
+##### SOURCE END #####
+--></body></html>

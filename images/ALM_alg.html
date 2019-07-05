@@ -1,0 +1,304 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>ALM_alg</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-05-29"><meta name="DC.source" content="ALM_alg.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="keyword">function</span> [x, fval] = ALM_alg(objFcn, x0, nvars, <span class="keyword">...</span>
+    eqCons, eqConsNum, ineqCons, ineqConsNum, w, v, sigma, <span class="keyword">...</span>
+    epsilon, alpha, beta, lb, ub, maxIter)
+<span class="comment">% This algorithm implements the Augmented Lagrangian method, which is a certain</span>
+<span class="comment">% class of algorithms for solving general constrained optimization problems</span>
+<span class="comment">% like</span>
+<span class="comment">%</span>
+<span class="comment">% $$\min~f(x)$$</span>
+<span class="comment">% $$s.t.:~h_{i}(x)=0,i=1,2,\ldots,l$$;</span>
+<span class="comment">% $$s.t.:~g_{j}(x)\leq0,j=1,2,\ldots,m$$.</span>
+<span class="comment">%</span>
+<span class="comment">% Input arguments:</span>
+<span class="comment">%   w: a column vector containing the initial estimates of the Lagrange</span>
+<span class="comment">%   multipliers w.r.t. inequality constraints.</span>
+<span class="comment">%   v: a column vector containing the initial estimates of the Lagrange</span>
+<span class="comment">%   multipliers w.r.t. equality constraints.</span>
+<span class="comment">%   objFcn: a handle of the objective function.</span>
+<span class="comment">%   x0: a column vector indicating the initial solution.</span>
+<span class="comment">%   nvars: an integer indicating the decision variable numbers.</span>
+<span class="comment">%   eqCons: a cell array where each element is the handle function of a</span>
+<span class="comment">%   equality constraint, i.e., h_i(x).</span>
+<span class="comment">%   ineqCons: a cell array where each element is the handle function of a</span>
+<span class="comment">%   inequality constraint, i.e., g_i(x).</span>
+<span class="comment">%   eqConsNum: an integer that is the number of all the equality</span>
+<span class="comment">%   constraints.</span>
+<span class="comment">%   ineqConsNum: an integer that is the number of all the inequality</span>
+<span class="comment">%   constraints.</span>
+<span class="comment">%   sigma: a double that is an initial estimate of the penalty factor.</span>
+<span class="comment">%   epsilon: a double scalar &gt;0 used to check whether stopping the run.</span>
+<span class="comment">%   alpha: a double scalar &gt;1 used to update the penalty factor.</span>
+<span class="comment">%   beta: a double scalar (0,1) used to check when updating the penalty.</span>
+<span class="comment">%   lb: a column or row vector where each element is the estimated lower</span>
+<span class="comment">%   bound of a decision variable.</span>
+<span class="comment">%   ub: a column or row vector where each element is the estimated upper</span>
+<span class="comment">%   bound of a decision variable.</span>
+<span class="comment">%   maxIter: an integer that is the maximum number of iterations.</span>
+
+
+<span class="comment">% Step 1</span>
+<span class="comment">% Initialize the epoch flag to 1.</span>
+k = 1;
+x_k_1 = x0;
+w_k = w;
+v_k = v;
+sigma_k = sigma;
+
+<span class="comment">% Step 2</span>
+<span class="keyword">while</span> (k &lt;=maxIter)
+    <span class="comment">% Construct the Augmented Lagrangian Function as the objective function of</span>
+    <span class="comment">% a unconstrained optimization problem.</span>
+    augLagFcn = @(x)Lagrange_Fcn(x, w_k, v_k, sigma_k);
+    x_k = PSO_alg(augLagFcn, nvars, lb, ub, <span class="string">'off'</span>);
+
+    <span class="comment">% Step 3</span>
+    <span class="comment">% Check the stop condition</span>
+    norm_h_k = norm_eqCons(x_k, eqCons, eqConsNum);
+    <span class="keyword">if</span> norm_h_k &lt; epsilon
+        x = x_k;
+        fval = objFcn(x_k);
+        <span class="keyword">break</span>;
+    <span class="keyword">end</span>
+
+    <span class="comment">% Step 4</span>
+    <span class="comment">% Adapt the sigma</span>
+    <span class="comment">% Check the stop condition</span>
+    norm_h_k_1 = norm_eqCons(x_k_1, eqCons, eqConsNum);
+    <span class="keyword">if</span> norm_h_k &gt;= beta*norm_h_k_1
+        sigma_k = alpha.*sigma_k;
+    <span class="keyword">end</span>
+
+    <span class="comment">% Step 5</span>
+    <span class="comment">% Update the multipliers</span>
+    [w_new, v_new] = multipliers_update(x_k, w_k, v_k, <span class="keyword">...</span>
+        eqCons, eqConsNum, ineqCons, ineqConsNum, sigma_k);
+    w_k = w_new;
+    v_k = v_new;
+
+    x_k_1 = x_k;
+
+    k = k + 1;
+<span class="keyword">end</span>
+
+    <span class="keyword">function</span> f = Lagrange_Fcn(x, w, v, sigma)
+        G = zeros(ineqConsNum, 1, <span class="string">'double'</span>);
+        H = zeros(eqConsNum, 1, <span class="string">'double'</span>);
+        <span class="keyword">for</span> i = 1:ineqConsNum
+            G(i) = (max([0, w(i) - sigma.*ineqCons{i}(x)])).^2 - w(i).^2;
+        <span class="keyword">end</span>
+        <span class="keyword">for</span> j = 1:eqConsNum
+            H(j) = eqCons{j}(x);
+        <span class="keyword">end</span>
+        f = objFcn(x) + (1./(2*sigma)).*(sum(G)) <span class="keyword">...</span>
+            - sum(v.*H) + (sigma./2).*sum(H.^2);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="keyword">function</span> [w_new, v_new] = multipliers_update(x_k, w_k, v_k, <span class="keyword">...</span>
+    eqCons, eqConsNum, ineqCons, ineqConsNum, sigma)
+<span class="comment">% Allocate memory</span>
+w_new = w_k;
+v_new = v_k;
+<span class="keyword">for</span> i = 1:ineqConsNum
+    w_new(i) = max([0, w_k(i) - sigma.*ineqCons{i}(x_k)]);
+<span class="keyword">end</span>
+<span class="keyword">for</span> j = 1:eqConsNum
+    v_new(j) = v_k(j) - sigma.*eqCons{j}(x_k);
+<span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="keyword">function</span> norm_h = norm_eqCons(x_k, eqCons, eqConsNum)
+H = zeros(eqConsNum, 1, <span class="string">'double'</span>);
+<span class="keyword">for</span> i = 1:eqConsNum
+    H(i) = eqCons{i}(x_k);
+<span class="keyword">end</span>
+norm_h = norm(H);
+<span class="keyword">end</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [x, fval] = ALM_alg(objFcn, x0, nvars, ...
+    eqCons, eqConsNum, ineqCons, ineqConsNum, w, v, sigma, ...
+    epsilon, alpha, beta, lb, ub, maxIter)
+% This algorithm implements the Augmented Lagrangian method, which is a certain
+% class of algorithms for solving general constrained optimization problems
+% like
+% 
+% $$\min~f(x)$$
+% $$s.t.:~h_{i}(x)=0,i=1,2,\ldots,l$$;
+% $$s.t.:~g_{j}(x)\leq0,j=1,2,\ldots,m$$.
+% 
+% Input arguments:
+%   w: a column vector containing the initial estimates of the Lagrange
+%   multipliers w.r.t. inequality constraints.
+%   v: a column vector containing the initial estimates of the Lagrange
+%   multipliers w.r.t. equality constraints.
+%   objFcn: a handle of the objective function.
+%   x0: a column vector indicating the initial solution.
+%   nvars: an integer indicating the decision variable numbers.
+%   eqCons: a cell array where each element is the handle function of a
+%   equality constraint, i.e., h_i(x).
+%   ineqCons: a cell array where each element is the handle function of a
+%   inequality constraint, i.e., g_i(x).
+%   eqConsNum: an integer that is the number of all the equality
+%   constraints.
+%   ineqConsNum: an integer that is the number of all the inequality
+%   constraints.
+%   sigma: a double that is an initial estimate of the penalty factor.
+%   epsilon: a double scalar >0 used to check whether stopping the run.
+%   alpha: a double scalar >1 used to update the penalty factor.
+%   beta: a double scalar (0,1) used to check when updating the penalty.
+%   lb: a column or row vector where each element is the estimated lower
+%   bound of a decision variable.
+%   ub: a column or row vector where each element is the estimated upper
+%   bound of a decision variable.
+%   maxIter: an integer that is the maximum number of iterations.
+
+
+% Step 1
+% Initialize the epoch flag to 1.
+k = 1;
+x_k_1 = x0;
+w_k = w;
+v_k = v;
+sigma_k = sigma;
+
+% Step 2
+while (k <=maxIter)
+    % Construct the Augmented Lagrangian Function as the objective function of
+    % a unconstrained optimization problem.
+    augLagFcn = @(x)Lagrange_Fcn(x, w_k, v_k, sigma_k);
+    x_k = PSO_alg(augLagFcn, nvars, lb, ub, 'off');
+    
+    % Step 3
+    % Check the stop condition
+    norm_h_k = norm_eqCons(x_k, eqCons, eqConsNum);
+    if norm_h_k < epsilon
+        x = x_k;
+        fval = objFcn(x_k);
+        break;
+    end
+    
+    % Step 4
+    % Adapt the sigma
+    % Check the stop condition
+    norm_h_k_1 = norm_eqCons(x_k_1, eqCons, eqConsNum);
+    if norm_h_k >= beta*norm_h_k_1
+        sigma_k = alpha.*sigma_k;
+    end
+    
+    % Step 5
+    % Update the multipliers
+    [w_new, v_new] = multipliers_update(x_k, w_k, v_k, ...
+        eqCons, eqConsNum, ineqCons, ineqConsNum, sigma_k);
+    w_k = w_new;
+    v_k = v_new;
+    
+    x_k_1 = x_k;
+    
+    k = k + 1;
+end
+
+    function f = Lagrange_Fcn(x, w, v, sigma)
+        G = zeros(ineqConsNum, 1, 'double');
+        H = zeros(eqConsNum, 1, 'double');
+        for i = 1:ineqConsNum
+            G(i) = (max([0, w(i) - sigma.*ineqCons{i}(x)])).^2 - w(i).^2;
+        end
+        for j = 1:eqConsNum
+            H(j) = eqCons{j}(x);
+        end
+        f = objFcn(x) + (1./(2*sigma)).*(sum(G)) ...
+            - sum(v.*H) + (sigma./2).*sum(H.^2);
+    end
+end
+
+function [w_new, v_new] = multipliers_update(x_k, w_k, v_k, ...
+    eqCons, eqConsNum, ineqCons, ineqConsNum, sigma)
+% Allocate memory
+w_new = w_k;
+v_new = v_k;
+for i = 1:ineqConsNum
+    w_new(i) = max([0, w_k(i) - sigma.*ineqCons{i}(x_k)]);
+end
+for j = 1:eqConsNum
+    v_new(j) = v_k(j) - sigma.*eqCons{j}(x_k);
+end
+end
+
+function norm_h = norm_eqCons(x_k, eqCons, eqConsNum)
+H = zeros(eqConsNum, 1, 'double');
+for i = 1:eqConsNum
+    H(i) = eqCons{i}(x_k);
+end
+norm_h = norm(H);
+end
+##### SOURCE END #####
+--></body></html>

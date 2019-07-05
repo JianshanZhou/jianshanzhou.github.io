@@ -1,0 +1,575 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>test_PSO_alg</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-05-29"><meta name="DC.source" content="test_PSO_alg.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">Test PSO Algorithm Prototype</a></li><li><a href="#2">A simple testing optimization problem</a></li><li><a href="#3">A more complex testing optimization problem</a></li><li><a href="#4">Visualize the Interference Pattern</a></li><li><a href="#5">Posing the Optimization Problem</a></li><li><a href="#6">Visualization the objective function</a></li><li><a href="#7">Setting Up and Solving the Problem with a Local Solver</a></li><li><a href="#9">Using <tt>PSO algorithm</tt></a></li><li><a href="#10">Examining Results</a></li></ul></div><h2 id="1">Test PSO Algorithm Prototype</h2><pre class="codeinput">clear
+close <span class="string">all</span>
+clc
+</pre><h2 id="2">A simple testing optimization problem</h2><p>The following can be compared with the built-in particleswarm solver provided by MATLAB.      objFcn = @dejong5fcn;      nvars = 2;      lb = [-64 -64];      ub = [64 64];      [x,fval] = particleswarm(objFcn,nvars,lb,ub)</p><pre class="codeinput">objFcn = @dejong5fcn;
+nvars = 2;
+lb = [-64 -64];
+ub = [64 64];
+[x, fval, exitFlag, output] = PSO_alg(objFcn, nvars, lb, ub, <span class="string">'iter'</span>)
+</pre><pre class="codeoutput">
+                                 Best            Mean     Stall
+Iteration     f-count            f(x)            f(x)    Iterations
+    0             200           23.81           475.9        0
+    1             400           1.992             494        0
+    2             600           1.992           472.7        1
+    3             800           1.992           480.3        2
+    4            1000           1.992           467.4        3
+    5            1200           1.992           491.9        4
+    6            1400           1.992           470.5        5
+    7            1600           1.992           482.3        6
+    8            1800           1.992           465.4        7
+    9            2000           1.992           454.4        8
+   10            2200           1.976           420.1        0
+   11            2400           1.005           397.1        0
+   12            2600           1.005           362.1        1
+   13            2800          0.9986           370.9        0
+   14            3000          0.9986           369.7        1
+   15            3200           0.998           349.6        0
+   16            3400           0.998           318.4        0
+   17            3600           0.998           311.4        0
+   18            3800           0.998           289.5        0
+   19            4000           0.998           282.3        0
+   20            4200           0.998             265        1
+   21            4400           0.998           256.3        2
+   22            4600           0.998           239.3        0
+   23            4800           0.998           215.5        0
+   24            5000           0.998           214.5        0
+   25            5200           0.998           212.4        0
+   26            5400           0.998           213.8        1
+   27            5600           0.998           221.1        0
+   28            5800           0.998           224.3        0
+   29            6000           0.998           212.3        1
+   30            6200           0.998           224.5        2
+
+                                 Best            Mean     Stall
+Iteration     f-count            f(x)            f(x)    Iterations
+   31            6400           0.998           242.9        3
+   32            6600           0.998           223.1        0
+   33            6800           0.998           249.1        1
+   34            7000           0.998           243.9        2
+   35            7200           0.998           257.6        3
+   36            7400           0.998             255        4
+PSO:particleswarm:ExitTolFun
+
+x =
+
+  -31.9785  -31.9783
+
+
+fval =
+
+    0.9980
+
+
+exitFlag =
+
+     1
+
+
+output = 
+
+  struct with fields:
+
+      rngstate: [1&times;1 struct]
+    iterations: 36
+     funccount: 7400
+       message: 'PSO:particleswarm:ExitTolFun'
+
+</pre><h2 id="3">A more complex testing optimization problem</h2><p>This example shows how to locate the maximum of an electromagnetic interference pattern. For simplicity of modeling, the pattern arises from monochromatic polarized light spreading out from point sources.</p><p>The electric field due to source i measured in the direction of polarization at point x and time t is</p><p><img src="test_PSO_alg_eq10785963084307098727.png" alt="$$E_i = \frac{A_i}{d_i(x)} \sin(\phi_i + \omega (t - d_i(x)/c) ),$$" style="width:226px;height:35px;"></p><p>where <img src="test_PSO_alg_eq12318961823750766280.png" alt="$\phi_i$" style="width:12px;height:14px;"> is the phase at time zero for source <img src="test_PSO_alg_eq05671228016298599287.png" alt="$i$" style="width:4px;height:10px;">, <img src="test_PSO_alg_eq08422257486649890878.png" alt="$c$" style="width:6px;height:7px;"> is the speed of light, <img src="test_PSO_alg_eq08589834809570054062.png" alt="$\omega$" style="width:10px;height:7px;"> is the frequency of the light, <img src="test_PSO_alg_eq06341030922150264654.png" alt="$A_i$" style="width:14px;height:14px;"> is the amplitude of source <img src="test_PSO_alg_eq05671228016298599287.png" alt="$i$" style="width:4px;height:10px;">, and <img src="test_PSO_alg_eq03540042879689344340.png" alt="$d_i(x)$" style="width:30px;height:15px;"> is the distance from source <img src="test_PSO_alg_eq05671228016298599287.png" alt="$i$" style="width:4px;height:10px;"> to <img src="test_PSO_alg_eq12428413953531653171.png" alt="$x$" style="width:8px;height:7px;">.</p><p>For a fixed point <img src="test_PSO_alg_eq12428413953531653171.png" alt="$x$" style="width:8px;height:7px;"> the intensity of the light is the time average of the square of the net electric field. The net electric field is sum of the electric fields due to all sources. The time average depends only on the sizes and relative phases of the electric fields at <img src="test_PSO_alg_eq12428413953531653171.png" alt="$x$" style="width:8px;height:7px;">. To calculate the net electric field, add up the individual contributions using the phasor method. For phasors, each source contributes a vector. The length of the vector is the amplitude divided by distance from the source, and the angle of the vector, <img src="test_PSO_alg_eq08188501116486218034.png" alt="$\phi_i - \omega d_i(x)/c$" style="width:86px;height:15px;"> is the phase at the point.</p><p>For this example, we define three point sources with the same frequency (<img src="test_PSO_alg_eq08589834809570054062.png" alt="$\omega$" style="width:10px;height:7px;">) and amplitude (<img src="test_PSO_alg_eq05147331747641807187.png" alt="$A$" style="width:10px;height:11px;">), but varied initial phase (<img src="test_PSO_alg_eq12318961823750766280.png" alt="$\phi_i$" style="width:12px;height:14px;">). We arrange these sources on a fixed plane.</p><pre class="codeinput"><span class="comment">% Frequency is proportional to the number of peaks</span>
+relFreqConst = 2*pi*2.5;
+amp = 2.2;
+phase = -[0; 0.54; 2.07];
+
+numSources = 3;
+height = 3;
+
+<span class="comment">% All point sources are aligned at [x_i,y_i,z]</span>
+xcoords = [2.4112
+           0.2064
+           1.6787];
+ycoords = [0.3957
+           0.3927
+           0.9877];
+zcoords = height*ones(numSources,1);
+
+origins = [xcoords ycoords zcoords];
+</pre><h2 id="4">Visualize the Interference Pattern</h2><p>Now let's visualize a slice of the interference pattern on the plane z = 0.</p><p>As you can see from the plot below, there are many peaks and valleys indicating constructive and destructive interference.</p><pre class="codeinput"><span class="comment">% Pass additional parameters via an anonymous function:</span>
+waveIntensity_x = @(x) waveIntensity(x,amp,phase, <span class="keyword">...</span>
+    relFreqConst,numSources,origins);
+<span class="comment">% Generate the grid</span>
+[X,Y] = meshgrid(-4:0.035:4,-4:0.035:4);
+<span class="comment">% Compute the intensity over the grid</span>
+Z = arrayfun(@(x,y) waveIntensity_x([x y]),X,Y);
+<span class="comment">% Plot the surface and the contours</span>
+figure
+surf(X,Y,Z,<span class="string">'EdgeColor'</span>,<span class="string">'none'</span>)
+xlabel(<span class="string">'x'</span>)
+ylabel(<span class="string">'y'</span>)
+zlabel(<span class="string">'intensity'</span>)
+</pre><img vspace="5" hspace="5" src="test_PSO_alg_01.png" alt=""> <h2 id="5">Posing the Optimization Problem</h2><p>We are interested in the location where this wave intensity reaches its highest peak.</p><p>The wave intensity (<img src="test_PSO_alg_eq17419315245227113761.png" alt="$I$" style="width:7px;height:10px;">) falls off as we move away from the source proportional to <img src="test_PSO_alg_eq16031428136029323258.png" alt="$1/d_i(x)$" style="width:44px;height:15px;">. Therefore, let's restrict the space of viable solutions by adding constraints to the problem.</p><p>If we limit the exposure of the sources with an aperture, then we can expect the maximum to lie in the intersection of the projection of the apertures onto our observation plane. We model the effect of an aperture by restricting the search to a circular region centered at each source.</p><p>We also restrict the solution space by adding bounds to the problem. Although these bounds may be redundant (given the nonlinear constraints), they are useful since they restrict the range in which start points are generated.</p><p>Now our problem has become:</p><p><img src="test_PSO_alg_eq12453268535670745809.png" alt="$$ \max_{x,y} I(x,y) $$" style="width:70px;height:22px;"></p><p>subject to</p><p><img src="test_PSO_alg_eq15177492393574770139.png" alt="$$ (x - x_{c1})^2 + (y - y_{c1})^2 \le r_1^2 $$" style="width:171px;height:18px;"></p><p><img src="test_PSO_alg_eq14704325890100651204.png" alt="$$ (x - x_{c2})^2 + (y - y_{c2})^2 \le r_2^2 $$" style="width:171px;height:18px;"></p><p><img src="test_PSO_alg_eq12919253210644283618.png" alt="$$ (x - x_{c3})^2 + (y - y_{c3})^2 \le r_3^2 $$" style="width:171px;height:18px;"></p><p><img src="test_PSO_alg_eq15040643586041034509.png" alt="$$-0.5 \leq x \leq 3.5$$" style="width:94px;height:13px;"></p><p><img src="test_PSO_alg_eq09901456531942939802.png" alt="$$-2 \leq y \leq 3$$" style="width:71px;height:14px;"></p><p>where <img src="test_PSO_alg_eq17961663673875526848.png" alt="$(x_{cn},y_{cn})$" style="width:54px;height:15px;"> and <img src="test_PSO_alg_eq07794014908579838056.png" alt="$r_n$" style="width:13px;height:10px;"> are the coordinates and aperture radius of the <img src="test_PSO_alg_eq02124905565993268910.png" alt="$n^{th}$" style="width:18px;height:13px;"> point source, respectively. Each source is given an aperture with radius 3. The given bounds encompass the feasible region.</p><p>The objective (<img src="test_PSO_alg_eq03744512032217266162.png" alt="$I(x,y)$" style="width:40px;height:15px;">) and nonlinear constraint functions are defined in separate MATLAB&reg; files, <tt>waveIntensity.m</tt> and <tt>apertureConstraint.m</tt>, respectively, which are listed at the end of this example.</p><h2 id="6">Visualization the objective function</h2><p>Now let's visualize the contours of our interference pattern with the nonlinear constraint boundaries superimposed. The feasible region is the interior of the intersection of the three circles (yellow, green, and blue). The bounds on the variables are indicated by the dashed-line box.</p><pre class="codeinput"><span class="comment">% Visualize the contours of our interference surface</span>
+domain = [-3 5.5 -4 5];
+figure;
+ezcontour(@(X,Y) arrayfun(@(x,y) waveIntensity_x([x y]),X,Y),domain,150);
+hold <span class="string">on</span>
+title(<span class="string">'Pattern Contours of The Interference Surface'</span>)
+</pre><img vspace="5" hspace="5" src="test_PSO_alg_02.png" alt=""> <h2 id="7">Setting Up and Solving the Problem with a Local Solver</h2><p>Given the nonlinear constraints, we need a constrained nonlinear solver, namely, <tt>fmincon</tt>.</p><p>Let's set up a problem structure describing our optimization problem. We want to maximize the intensity function, so we negate the values returned form <tt>waveIntensity</tt>. Let's choose an arbitrary start point that happens to be near the feasible region.</p><p>For this small problem, we'll use <tt>fmincon</tt>'s SQP algorithm.</p><pre class="codeinput"><span class="comment">% Pass additional parameters via an anonymous function:</span>
+apertureConstraint_x = @(x) apertureConstraint(x,xcoords,ycoords);
+
+<span class="comment">% Set up fmincon's options</span>
+x0 = [3 -1];
+opts = optimoptions(<span class="string">'fmincon'</span>,<span class="string">'Algorithm'</span>,<span class="string">'sqp'</span>);
+problem = createOptimProblem(<span class="string">'fmincon'</span>,<span class="string">'objective'</span>, <span class="keyword">...</span>
+    @(x) -waveIntensity_x(x),<span class="string">'x0'</span>,x0,<span class="string">'lb'</span>,lb,<span class="string">'ub'</span>,ub, <span class="keyword">...</span>
+    <span class="string">'nonlcon'</span>,apertureConstraint_x,<span class="string">'options'</span>,opts);
+
+<span class="comment">% Call fmincon</span>
+[xlocal,fvallocal] = fmincon(problem)
+</pre><pre class="codeoutput">
+Local minimum found that satisfies the constraints.
+
+Optimization completed because the objective function is non-decreasing in 
+feasible directions, to within the default value of the optimality tolerance,
+and constraints are satisfied to within the default value of the constraint tolerance.
+
+
+
+
+xlocal =
+
+   -0.0331    1.3837
+
+
+fvallocal =
+
+   -3.4975
+
+</pre><p>Now, let's see how we did by showing the result of <tt>fmincon</tt> in our contour plot. Notice that <tt>fmincon</tt> did not reach the global maximum, which is also annotated on the plot. Note that we'll only plot the bound that was active at the solution.</p><pre class="codeinput">[~,maxIdx] = max(Z(:));
+xmax = [X(maxIdx),Y(maxIdx)];
+figure
+contour(X,Y,Z)
+hold <span class="string">on</span>
+
+<span class="comment">% Show bounds</span>
+line([lb(1) lb(1)],[lb(2) ub(2)],<span class="string">'LineStyle'</span>,<span class="string">'--'</span>)
+
+<span class="comment">% Plot PSO results using a circle marker</span>
+P1 = scatter(xlocal(1), xlocal(2), <span class="string">'s'</span>, <span class="keyword">...</span>
+    <span class="string">'MarkerFaceColor'</span>, <span class="string">'b'</span>, <span class="string">'MarkerEdgeColor'</span>,[0 0 1],<span class="string">'LineWidth'</span>,1.1);
+
+<span class="comment">% Create textarrow showing the location of xglobal</span>
+annotation(<span class="string">'textarrow'</span>,[0.44 0.50],[0.63 0.58],<span class="string">'TextEdgeColor'</span>,[0 0 0],<span class="keyword">...</span>
+    <span class="string">'TextBackgroundColor'</span>,[1 1 1],<span class="string">'FontSize'</span>,12,<span class="string">'String'</span>,{<span class="string">'Global Max'</span>});
+legend(P1, <span class="string">'MATLAB:fmincon()'</span>, <span class="string">'Location'</span>, <span class="string">'best'</span>);
+axis([-1 3.75 -3 3])
+</pre><img vspace="5" hspace="5" src="test_PSO_alg_03.png" alt=""> <h2 id="9">Using <tt>PSO algorithm</tt></h2><p>Given an arbitrary initial guess, <tt>fmincon</tt> gets stuck at a nearby local maximum. Finding tight bounds can be difficult to do in practice, when not much is known about the objective function or constraints. In general though, we may be able to guess a reasonable region in which we would like to restrict the set of start points.</p><pre class="codeinput">rng(4,<span class="string">'twister'</span>) <span class="comment">% for reproducibility</span>
+
+<span class="comment">% Run GlobalSearch</span>
+nvars = 2;
+lb = -5*ones(2,1);
+ub = 5*ones(2,1);
+objFcn = @(x) -waveIntensity_x(x);
+tic;
+[x, fval, exitFlag, output] = PSO_alg(objFcn, nvars, lb, ub, <span class="string">'iter'</span>)
+toc
+</pre><pre class="codeoutput">
+                                 Best            Mean     Stall
+Iteration     f-count            f(x)            f(x)    Iterations
+    0             200          -3.855         -0.7119        0
+    1             400          -4.196         -0.4869        0
+    2             600          -4.196         -0.7058        1
+    3             800          -4.196         -0.7684        2
+    4            1000          -4.196         -0.6578        3
+    5            1200          -4.196         -0.6571        4
+    6            1400          -4.196         -0.6861        5
+    7            1600          -4.257         -0.7249        0
+    8            1800          -4.257         -0.6303        1
+    9            2000          -4.257         -0.7115        2
+   10            2200          -4.257         -0.7712        3
+   11            2400          -4.257         -0.8945        4
+   12            2600          -4.257          -1.247        5
+   13            2800          -4.317          -1.289        0
+   14            3000          -4.359          -1.794        0
+   15            3200           -4.37          -2.065        0
+   16            3400           -4.37          -2.398        0
+   17            3600           -4.37          -2.627        1
+   18            3800           -4.37           -2.82        0
+   19            4000           -4.37          -2.946        1
+   20            4200           -4.37          -2.997        0
+   21            4400           -4.37          -3.077        1
+   22            4600           -4.37          -3.261        0
+   23            4800           -4.37          -3.333        0
+   24            5000           -4.37          -3.384        0
+   25            5200           -4.37          -3.488        0
+   26            5400           -4.37          -3.482        0
+   27            5600           -4.37          -3.601        1
+   28            5800           -4.37          -3.586        0
+   29            6000           -4.37          -3.564        0
+   30            6200           -4.37          -3.595        0
+
+                                 Best            Mean     Stall
+Iteration     f-count            f(x)            f(x)    Iterations
+   31            6400           -4.37          -3.657        0
+   32            6600           -4.37          -3.601        1
+   33            6800           -4.37          -3.522        0
+   34            7000           -4.37          -3.533        1
+   35            7200           -4.37          -3.577        0
+   36            7400           -4.37          -3.505        1
+   37            7600           -4.37          -3.537        2
+PSO:particleswarm:ExitTolFun
+
+x =
+
+    1.2592    0.4284
+
+
+fval =
+
+   -4.3702
+
+
+exitFlag =
+
+     1
+
+
+output = 
+
+  struct with fields:
+
+      rngstate: [1&times;1 struct]
+    iterations: 37
+     funccount: 7600
+       message: 'PSO:particleswarm:ExitTolFun'
+
+Elapsed time is 0.258475 seconds.
+</pre><h2 id="10">Examining Results</h2><p>Show the contours</p><pre class="codeinput">figure
+contour(X,Y,Z);
+hold <span class="string">on</span>
+
+<span class="comment">% Create textarrow showing the location of xglobal</span>
+annotation(<span class="string">'textarrow'</span>,[0.44 0.50],[0.63 0.58],<span class="string">'TextEdgeColor'</span>,[0 0 0],<span class="keyword">...</span>
+    <span class="string">'TextBackgroundColor'</span>,[1 1 1],<span class="string">'FontSize'</span>,12,<span class="string">'String'</span>,{<span class="string">'Global Max'</span>});
+axis([-1 3.75 -3 3]);
+
+<span class="comment">% Plot PSO and fmincon results using a circle marker</span>
+P1 = scatter(x(1), x(2), <span class="string">'o'</span>, <span class="keyword">...</span>
+    <span class="string">'MarkerFaceColor'</span>, <span class="string">'r'</span>, <span class="string">'MarkerEdgeColor'</span>,[1 0 0],<span class="string">'LineWidth'</span>,1.25);
+
+P2 = scatter(xlocal(1), xlocal(2), <span class="string">'s'</span>, <span class="keyword">...</span>
+    <span class="string">'MarkerFaceColor'</span>, <span class="string">'b'</span>, <span class="string">'MarkerEdgeColor'</span>,[0 0 1],<span class="string">'LineWidth'</span>,1.25);
+
+legend([P1, P2],{<span class="string">'PSO'</span>, <span class="string">'MATLAB:fmincon()'</span>}, <span class="string">'Location'</span>,<span class="string">'best'</span>);
+
+title(<span class="string">'PSO Performance with Relaxed Bounds'</span>);
+</pre><img vspace="5" hspace="5" src="test_PSO_alg_04.png" alt=""> <p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Test PSO Algorithm Prototype
+
+clear 
+close all
+clc
+
+%% A simple testing optimization problem
+% The following can be compared with the built-in particleswarm solver
+% provided by MATLAB.
+%      objFcn = @dejong5fcn;
+%      nvars = 2;
+%      lb = [-64 -64];
+%      ub = [64 64];
+%      [x,fval] = particleswarm(objFcn,nvars,lb,ub)
+objFcn = @dejong5fcn;
+nvars = 2;
+lb = [-64 -64];
+ub = [64 64];
+[x, fval, exitFlag, output] = PSO_alg(objFcn, nvars, lb, ub, 'iter')
+
+%% A more complex testing optimization problem
+%
+% This example shows how to locate the maximum
+% of an electromagnetic interference pattern. For simplicity of modeling,
+% the pattern arises from monochromatic polarized light spreading out from
+% point sources.
+% 
+% The electric field due to source i measured in the direction of
+% polarization at point x and time t is 
+%
+% $$E_i = \frac{A_i}{d_i(x)} \sin(\phi_i + \omega (t - d_i(x)/c) ),$$ 
+%
+% where $\phi_i$ is the phase at time zero for source $i$, $c$ is the speed
+% of light, $\omega$ is the frequency of the light, $A_i$ is the amplitude
+% of source $i$, and $d_i(x)$ is the distance from source $i$ to $x$.
+%  
+% For a fixed point $x$ the intensity of the light is the time average of
+% the square of the net electric field. The net electric field is sum of
+% the electric fields due to all sources. The time average depends only on
+% the sizes and relative phases of the electric fields at $x$. To calculate
+% the net electric field, add up the individual contributions using the
+% phasor method. For phasors, each source contributes a vector. The length
+% of the vector is the amplitude divided by distance from the source, and
+% the angle of the vector, $\phi_i - \omega d_i(x)/c$ is the phase at the
+% point.
+%
+% For this example, we define three point sources with the same frequency
+% ($\omega$) and amplitude ($A$), but varied initial phase ($\phi_i$). We
+% arrange these sources on a fixed plane.
+
+% Frequency is proportional to the number of peaks
+relFreqConst = 2*pi*2.5;
+amp = 2.2;
+phase = -[0; 0.54; 2.07];
+
+numSources = 3;
+height = 3;
+
+% All point sources are aligned at [x_i,y_i,z]
+xcoords = [2.4112
+           0.2064
+           1.6787];
+ycoords = [0.3957
+           0.3927
+           0.9877];
+zcoords = height*ones(numSources,1);          
+
+origins = [xcoords ycoords zcoords];
+
+%% Visualize the Interference Pattern
+% Now let's visualize a slice of the interference pattern on the plane z = 0.
+%
+% As you can see from the plot below, there are many peaks and valleys
+% indicating constructive and destructive interference.
+
+% Pass additional parameters via an anonymous function:
+waveIntensity_x = @(x) waveIntensity(x,amp,phase, ...
+    relFreqConst,numSources,origins);
+% Generate the grid
+[X,Y] = meshgrid(-4:0.035:4,-4:0.035:4);
+% Compute the intensity over the grid
+Z = arrayfun(@(x,y) waveIntensity_x([x y]),X,Y);
+% Plot the surface and the contours
+figure
+surf(X,Y,Z,'EdgeColor','none')
+xlabel('x')
+ylabel('y')
+zlabel('intensity')
+
+%% Posing the Optimization Problem
+% We are interested in the location where this wave intensity reaches
+% its highest peak. 
+%
+% The wave intensity ($I$) falls off as we move away from the source 
+% proportional to $1/d_i(x)$. Therefore, let's restrict the space of
+% viable solutions by adding constraints to the problem.
+%
+% If we limit the exposure of the sources with an aperture, then we can
+% expect the maximum to lie in the intersection of the projection of the
+% apertures onto our observation plane. We model the effect of an aperture
+% by restricting the search to a circular region centered at each source. 
+%
+% We also restrict the solution space by adding bounds to the problem.
+% Although these bounds may be redundant (given the nonlinear constraints),
+% they are useful since they restrict the range in which start points are
+% generated.
+%
+% Now our problem has become:
+%
+% $$ \max_{x,y} I(x,y) $$
+%
+% subject to
+%
+% $$ (x - x_{c1})^2 + (y - y_{c1})^2 \le r_1^2 $$
+%
+% $$ (x - x_{c2})^2 + (y - y_{c2})^2 \le r_2^2 $$
+%
+% $$ (x - x_{c3})^2 + (y - y_{c3})^2 \le r_3^2 $$
+%
+% $$-0.5 \leq x \leq 3.5$$
+%
+% $$-2 \leq y \leq 3$$
+%
+% where $(x_{cn},y_{cn})$ and $r_n$ are the coordinates and aperture radius
+% of the $n^{th}$ point source, respectively. Each source is given an
+% aperture with radius 3. The given bounds encompass the feasible region.
+%
+% The objective ($I(x,y)$) and nonlinear constraint functions are defined
+% in separate MATLAB(R) files, |waveIntensity.m| and |apertureConstraint.m|,
+% respectively, which are listed at the end of this example.
+%
+
+%% Visualization the objective function
+% Now let's visualize the contours of our interference pattern with the
+% nonlinear constraint boundaries superimposed. The feasible region is the
+% interior of the intersection of the three circles (yellow, green, and
+% blue). The bounds on the variables are indicated by the dashed-line box.
+%
+
+% Visualize the contours of our interference surface
+domain = [-3 5.5 -4 5];
+figure;
+ezcontour(@(X,Y) arrayfun(@(x,y) waveIntensity_x([x y]),X,Y),domain,150);
+hold on
+title('Pattern Contours of The Interference Surface')
+
+%% Setting Up and Solving the Problem with a Local Solver
+% Given the nonlinear constraints, we need a constrained nonlinear solver,
+% namely, |fmincon|. 
+%
+% Let's set up a problem structure describing our optimization problem. We
+% want to maximize the intensity function, so we negate the values returned
+% form |waveIntensity|. Let's choose an arbitrary start point that happens
+% to be near the feasible region. 
+%
+% For this small problem, we'll use |fmincon|'s SQP algorithm.
+
+% Pass additional parameters via an anonymous function:
+apertureConstraint_x = @(x) apertureConstraint(x,xcoords,ycoords);
+
+% Set up fmincon's options
+x0 = [3 -1];
+opts = optimoptions('fmincon','Algorithm','sqp');
+problem = createOptimProblem('fmincon','objective', ...
+    @(x) -waveIntensity_x(x),'x0',x0,'lb',lb,'ub',ub, ...
+    'nonlcon',apertureConstraint_x,'options',opts);
+
+% Call fmincon
+[xlocal,fvallocal] = fmincon(problem)
+%% 
+% Now, let's see how we did by showing the result of |fmincon| in our contour
+% plot. Notice that |fmincon| did not reach the global maximum, which is also
+% annotated on the plot. Note that we'll only plot the bound that was
+% active at the solution.
+
+[~,maxIdx] = max(Z(:));
+xmax = [X(maxIdx),Y(maxIdx)];
+figure
+contour(X,Y,Z)
+hold on
+
+% Show bounds
+line([lb(1) lb(1)],[lb(2) ub(2)],'LineStyle','REPLACE_WITH_DASH_DASH')
+
+% Plot PSO results using a circle marker
+P1 = scatter(xlocal(1), xlocal(2), 's', ...
+    'MarkerFaceColor', 'b', 'MarkerEdgeColor',[0 0 1],'LineWidth',1.1);
+
+% Create textarrow showing the location of xglobal
+annotation('textarrow',[0.44 0.50],[0.63 0.58],'TextEdgeColor',[0 0 0],...
+    'TextBackgroundColor',[1 1 1],'FontSize',12,'String',{'Global Max'});
+legend(P1, 'MATLAB:fmincon()', 'Location', 'best');
+axis([-1 3.75 -3 3])
+%% Using |PSO algorithm|
+% Given an arbitrary initial guess, |fmincon| gets stuck at a nearby local
+% maximum. Finding tight bounds can be difficult to do in practice, when not much is
+% known about the objective function or constraints. In general though, we
+% may be able to guess a reasonable region in which we would like to
+% restrict the set of start points.
+
+rng(4,'twister') % for reproducibility
+
+% Run GlobalSearch
+nvars = 2;
+lb = -5*ones(2,1);
+ub = 5*ones(2,1);
+objFcn = @(x) -waveIntensity_x(x);
+tic;
+[x, fval, exitFlag, output] = PSO_alg(objFcn, nvars, lb, ub, 'iter')
+toc
+
+
+%% Examining Results
+% Show the contours
+figure
+contour(X,Y,Z);
+hold on
+
+% Create textarrow showing the location of xglobal
+annotation('textarrow',[0.44 0.50],[0.63 0.58],'TextEdgeColor',[0 0 0],...
+    'TextBackgroundColor',[1 1 1],'FontSize',12,'String',{'Global Max'});
+axis([-1 3.75 -3 3]);
+
+% Plot PSO and fmincon results using a circle marker
+P1 = scatter(x(1), x(2), 'o', ...
+    'MarkerFaceColor', 'r', 'MarkerEdgeColor',[1 0 0],'LineWidth',1.25);
+
+P2 = scatter(xlocal(1), xlocal(2), 's', ...
+    'MarkerFaceColor', 'b', 'MarkerEdgeColor',[0 0 1],'LineWidth',1.25);
+
+legend([P1, P2],{'PSO', 'MATLAB:fmincon()'}, 'Location','best');
+
+title('PSO Performance with Relaxed Bounds');
+
+
+
+
+
+
+
+##### SOURCE END #####
+--></body></html>

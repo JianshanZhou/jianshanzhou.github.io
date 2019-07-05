@@ -1,0 +1,1348 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>ALM_solver_for_Maximizing_MPLIP</title><meta name="generator" content="MATLAB 9.5"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2019-05-30"><meta name="DC.source" content="ALM_solver_for_Maximizing_MPLIP.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#3">Optimization problem</a></li><li><a href="#4">ALM algorithm kernel</a></li><li><a href="#5">Formulation of augmented Lagrangian function</a></li><li><a href="#6">PSO solver for unconstrained problem</a></li></ul></div><pre class="codeinput"><span class="keyword">function</span> [x, fval] = ALM_solver_for_Maximizing_MPLIP(amp, phase, <span class="keyword">...</span>
+    relFreqConst,numSources,xcoords, ycoords, zcoords, sigma, <span class="keyword">...</span>
+    epsilon, alpha, beta, maxIter, lb, ub)
+</pre><pre class="codeinput"><span class="comment">% Maximizing Monochromatic Polarized Light Interference Patterns Using</span>
+<span class="comment">% Augmented Lagrangian Method.</span>
+
+<span class="comment">%#codegen</span>
+</pre><h2 id="3">Optimization problem</h2><p>Construct the objective function</p><pre class="codeinput">origins = [xcoords ycoords zcoords];
+
+    <span class="keyword">function</span> f = objFcn(x)
+        f = - waveIntensity(x, amp,phase, <span class="keyword">...</span>
+            relFreqConst,numSources,origins);
+    <span class="keyword">end</span>
+
+<span class="comment">% Construct the inequality constraints</span>
+ineqConsNum = 7;
+<span class="comment">% ineqCons = cell(ineqConsNum, 1);</span>
+
+g1 = @(x,y)  (x-xcoords(1)).^2 + (y-ycoords(1)).^2 - 9;
+g2 = @(x,y)  (x-xcoords(2)).^2 + (y-ycoords(2)).^2 - 9;
+g3 = @(x,y)  (x-xcoords(3)).^2 + (y-ycoords(3)).^2 - 9;
+<span class="comment">% ineqCons{1} = @(x)-g1(x(1), x(2));</span>
+<span class="comment">% ineqCons{2} = @(x)-g2(x(1), x(2));</span>
+<span class="comment">% ineqCons{3} = @(x)-g3(x(1), x(2));</span>
+<span class="comment">%</span>
+<span class="comment">% ineqCons{4} = @(x)(x(1) - lb(1));</span>
+<span class="comment">% ineqCons{5} = @(x)(ub(1) - x(1));</span>
+<span class="comment">% ineqCons{6} = @(x)(x(2) - lb(2));</span>
+<span class="comment">% ineqCons{7} = @(x)(ub(2) - x(2));</span>
+ineqCons = {@(x)-g1(x(1), x(2)),<span class="keyword">...</span>
+    @(x)-g2(x(1), x(2)), <span class="keyword">...</span>
+    @(x)-g3(x(1), x(2)), <span class="keyword">...</span>
+    @(x)(x(1) - lb(1)), <span class="keyword">...</span>
+    @(x)(ub(1) - x(1)), <span class="keyword">...</span>
+    @(x)(x(2) - lb(2)), <span class="keyword">...</span>
+    @(x)(ub(2) - x(2))};
+
+<span class="comment">% Construct the equality constraints</span>
+eqConsNum = 0;
+eqCons = {};
+
+nvars = 2;
+w = ones(ineqConsNum, 1).*1.3;
+v = ones(eqConsNum, 1).*1.3;
+</pre><h2 id="4">ALM algorithm kernel</h2><p>Step 1 Initialize the epoch flag to 1.</p><pre class="codeinput">x0 = [0.5; 0.5];
+x = x0;
+fval =  0;
+k = 1;
+x_k_1 = x0;
+w_k = w;
+v_k = v;
+sigma_k = sigma;
+
+<span class="comment">% Step 2</span>
+<span class="keyword">while</span> (k &lt;=maxIter)
+    <span class="comment">% Construct the Augmented Lagrangian Function as the objective function of</span>
+    <span class="comment">% a unconstrained optimization problem.</span>
+    [x_k, ~, ~] = PSO_alg_solver(w_k, v_k, sigma_k, nvars, lb, ub, <span class="string">'off'</span>);
+
+    <span class="comment">% Step 3</span>
+    <span class="comment">% Check the stop condition</span>
+    norm_h_k = norm_eqCons(x_k, eqCons, eqConsNum);
+    <span class="keyword">if</span> norm_h_k &lt; epsilon
+        x = [x_k(1);x_k(2)];
+        fval = objFcn(x_k);
+        <span class="keyword">break</span>;
+    <span class="keyword">end</span>
+
+    <span class="comment">% Step 4</span>
+    <span class="comment">% Adapt the sigma</span>
+    <span class="comment">% Check the stop condition</span>
+    norm_h_k_1 = norm_eqCons(x_k_1, eqCons, eqConsNum);
+    <span class="keyword">if</span> norm_h_k &gt;= beta*norm_h_k_1
+        sigma_k = alpha.*sigma_k;
+    <span class="keyword">end</span>
+
+    <span class="comment">% Step 5</span>
+    <span class="comment">% Update the multipliers</span>
+    [w_new, v_new] = multipliers_update(x_k, w_k, v_k, <span class="keyword">...</span>
+        eqCons, eqConsNum, ineqCons, ineqConsNum, sigma_k);
+    w_k = w_new;
+    v_k = v_new;
+
+    x_k_1 = [x_k(1);x_k(2)];
+
+    k = k + 1;
+<span class="keyword">end</span>
+</pre><h2 id="5">Formulation of augmented Lagrangian function</h2><pre class="codeinput">    <span class="keyword">function</span> f = Lagrange_Fcn(x, w, v, sigma)
+        G = zeros(7, 1, <span class="string">'double'</span>);
+        H = zeros(0, 1, <span class="string">'double'</span>);
+        <span class="keyword">for</span> i = 1:7
+            G(i) = (max([0, w(i) - sigma.*ineqCons{i}(x)])).^2 - w(i).^2;
+        <span class="keyword">end</span>
+        <span class="keyword">for</span> j = 1:0
+            H(j) = eqCons{j}(x);
+        <span class="keyword">end</span>
+        f = objFcn(x) + (1./(2*sigma)).*(sum(G)) <span class="keyword">...</span>
+            - sum(v.*H) + (sigma./2).*sum(H.^2);
+    <span class="keyword">end</span>
+</pre><h2 id="6">PSO solver for unconstrained problem</h2><pre class="codeinput">    <span class="keyword">function</span> [x, fval, exitFlag] = PSO_alg_solver(w_k, v_k, sigma_k, <span class="keyword">...</span>
+            nvars, lb, ub, Display)
+        <span class="comment">% Construct augmented Lagrangian function.</span>
+        objFcn = @(x)Lagrange_Fcn(x, w_k, v_k, sigma_k);
+
+<span class="comment">%         output = struct('rngstate', rng, 'iterations', 0, 'funccount', 0, 'message', ' ');</span>
+<span class="comment">%         output = struct('rngstate', rng, 'iterations', 0, 'funccount', 0);</span>
+        [x,fval] = deal([]);
+
+        options = struct;
+        <span class="comment">% options.Display = 'iter';</span>
+        options.DisplayInterval = 1;
+        <span class="comment">% switch  options.Display</span>
+        <span class="keyword">switch</span>  Display
+            <span class="keyword">case</span> {<span class="string">'off'</span>,<span class="string">'none'</span>}
+                options.Verbosity = 0;
+            <span class="keyword">case</span> <span class="string">'final'</span>
+                options.Verbosity = 1;
+            <span class="keyword">case</span> <span class="string">'iter'</span>
+                options.Verbosity = 2;
+            <span class="keyword">otherwise</span>
+                options.Verbosity = 0;
+        <span class="keyword">end</span>
+
+        options.InertiaRange = [0.1000 1.1000];
+        options.InitialSwarm = [];
+        options.SwarmSize = min(500, 100*nvars);
+        options.InitialSwarmSpan = 2000;
+        options.MaxIter = 200*nvars;
+        options.MaxTime = Inf;
+        options.MinFractionNeighbors = 0.2500;
+        options.ObjectiveLimit = -Inf;
+        options.SelfAdjustment = 1.4900;
+        options.SocialAdjustment = 1.4900;
+        options.StallIterLimit = 20;
+        options.StallTimeLimit = Inf;
+        options.TolFun = 1.0000e-6;
+        options.TolFunValue = 1.0000e-6;
+
+        <span class="comment">% Args lb &amp; ub</span>
+        [lbColumn, ubColumn, msg, exitFlag] = checkbound(lb, ub, nvars);
+        <span class="comment">% checkbound returns column vectors, but we to convert that to a row vector</span>
+        <span class="comment">% and repeat it across SwarmSize rows.</span>
+        lbRow = lbColumn';
+        ubRow = ubColumn';
+        <span class="keyword">if</span> exitFlag &lt; 0
+            <span class="comment">% output.message = msg; % This is the first message, so no need to append</span>
+            <span class="keyword">if</span> options.Verbosity &gt; 0
+                fprintf(<span class="string">'%s\n'</span>, msg);
+            <span class="keyword">end</span>
+            <span class="keyword">return</span>
+        <span class="keyword">end</span>
+
+        <span class="comment">% Perform check on initial population, fvals, and range</span>
+        options = initialParticleCheck(options);
+
+        exitFlag = 0;
+
+        <span class="comment">% Get algorithmic options</span>
+        numParticles = options.SwarmSize;
+        cSelf = options.SelfAdjustment;
+        cSocial = options.SocialAdjustment;
+        minNeighborhoodSize = max(2,floor(numParticles*options.MinFractionNeighbors));
+        minInertia = options.InertiaRange(1);
+        maxInertia = options.InertiaRange(2);
+        lbMatrix = repmat(lbRow, numParticles, 1);
+        ubMatrix = repmat(ubRow, numParticles, 1);
+
+
+        <span class="comment">% Create initial state: particle positions &amp; velocities, fvals, status data</span>
+        state = makeState(nvars,lbMatrix,ubMatrix,objFcn,options);
+        bestFvals = min(state.Fvals);
+        <span class="comment">% Create a vector to store the last StallIterLimit bestFvals.</span>
+        <span class="comment">% bestFvalsWindow is a circular buffer, so that the value from the i'th</span>
+        <span class="comment">% iteration is stored in element with index mod(i-1,StallIterLimit)+1.</span>
+        bestFvalsWindow = nan(options.StallIterLimit, 1);
+
+        <span class="comment">% Initialize adaptive parameters:</span>
+        <span class="comment">%   initial inertia = maximum *magnitude* inertia</span>
+        <span class="comment">%   initial neighborhood size = minimum neighborhood size</span>
+        adaptiveInertiaCounter = 0;
+        <span class="keyword">if</span> all(options.InertiaRange &gt;= 0)
+            adaptiveInertia = maxInertia;
+        <span class="keyword">elseif</span> all(options.InertiaRange &lt;= 0)
+            adaptiveInertia = minInertia;
+        <span class="keyword">else</span>
+            <span class="comment">% checkfield should prevent InertiaRange from having positive and</span>
+            <span class="comment">% negative vlaues.</span>
+            assert(false, <span class="string">'PSO:particleswarm:invalidInertiaRange'</span>, <span class="keyword">...</span>
+                <span class="string">'The InertiaRange option should not contain both positive and negative numbers.'</span>);
+        <span class="keyword">end</span>
+        adaptiveNeighborhoodSize = minNeighborhoodSize;
+
+        <span class="comment">% Setup display header</span>
+        <span class="keyword">if</span>  options.Verbosity &gt; 1
+            fprintf(<span class="string">'\n                                 Best            Mean     Stall\n'</span>);
+            fprintf(  <span class="string">'Iteration     f-count            f(x)            f(x)    Iterations\n'</span>);
+            fprintf(<span class="string">'%5.0f         %7.0f    %12.4g    %12.4g    %5.0f\n'</span>, <span class="keyword">...</span>
+                0, state.FunEval, bestFvals, mean(state.Fvals), 0);
+        <span class="keyword">end</span>
+
+        <span class="comment">% Run the main loop until some exit condition becomes true</span>
+<span class="comment">%         message = '';</span>
+        <span class="keyword">while</span> (~exitFlag)
+            state.Iteration = state.Iteration + 1;
+
+            <span class="comment">% Generate a random neighborhood for each particle that includes</span>
+            <span class="comment">% the particle itself</span>
+            neighborIndex = zeros(numParticles, adaptiveNeighborhoodSize);
+            neighborIndex(:, 1) = 1:numParticles; <span class="comment">% First neighbor is self</span>
+            <span class="keyword">for</span> i = 1:numParticles
+                <span class="comment">% Determine random neighbors that exclude the particle itself,</span>
+                <span class="comment">% which is (numParticles-1) particles</span>
+                neighbors = randperm(numParticles-1, adaptiveNeighborhoodSize-1);
+                <span class="comment">% Add 1 to indicies that are &gt;= current particle index</span>
+                iShift = neighbors &gt;= i;
+                neighbors(iShift) = neighbors(iShift) + 1;
+                neighborIndex(i,2:end) = neighbors;
+            <span class="keyword">end</span>
+            <span class="comment">% Identify the best neighbor</span>
+            [~, bestRowIndex] = min(state.IndividualBestFvals(neighborIndex), [], 2);
+            <span class="comment">% Create the linear index into neighborIndex</span>
+            bestLinearIndex = (bestRowIndex.'-1).*numParticles + (1:numParticles);
+            bestNeighborIndex = neighborIndex(bestLinearIndex);
+            randSelf = rand(numParticles, nvars);
+            randSocial = rand(numParticles, nvars);
+
+            <span class="comment">% Note that velocities and positions can become infinite if the</span>
+            <span class="comment">% inertia range is too large or if the objective function is badly</span>
+            <span class="comment">% behaved.</span>
+
+            <span class="comment">% Update the velocities</span>
+            newVelocities = adaptiveInertia*state.Velocities + <span class="keyword">...</span>
+                cSelf*randSelf.*(state.IndividualBestPositions-state.Positions) + <span class="keyword">...</span>
+                cSocial*randSocial.*(state.IndividualBestPositions(bestNeighborIndex, :)-state.Positions);
+            tfValid = all(isfinite(newVelocities), 2);
+            state.Velocities(tfValid,:) = newVelocities(tfValid,:);
+            <span class="comment">% Update the positions</span>
+            newPopulation = state.Positions + state.Velocities;
+            tfInvalid = ~isfinite(newPopulation);
+            newPopulation(tfInvalid) = state.Positions(tfInvalid);
+            <span class="comment">% Enforce bounds, setting the corresponding velocity component to</span>
+            <span class="comment">% zero if a particle encounters a lower/upper bound</span>
+            tfInvalid = newPopulation &lt; lbMatrix;
+            <span class="keyword">if</span> any(tfInvalid(:))
+                newPopulation(tfInvalid) = lbMatrix(tfInvalid);
+                state.Velocities(tfInvalid) = 0;
+            <span class="keyword">end</span>
+            tfInvalid = newPopulation &gt; ubMatrix;
+            <span class="keyword">if</span> any(tfInvalid(:))
+                newPopulation(tfInvalid) = ubMatrix(tfInvalid);
+                state.Velocities(tfInvalid) = 0;
+            <span class="keyword">end</span>
+            state.Positions = newPopulation;
+
+            <span class="comment">% Objective evaluation</span>
+            state.Fvals = fcnvectorizer(objFcn, state.Positions);
+            state.FunEval = state.FunEval + numParticles;
+
+            <span class="comment">% Remember the best fvals and positions</span>
+            tfImproved = state.Fvals &lt; state.IndividualBestFvals;
+            state.IndividualBestFvals(tfImproved) = state.Fvals(tfImproved);
+            state.IndividualBestPositions(tfImproved, :) = state.Positions(tfImproved, :);
+            bestFvalsWindow(1+mod(state.Iteration-1,options.StallIterLimit)) = min(state.IndividualBestFvals);
+
+            <span class="comment">% Keep track of improvement in bestFvals and update the adaptive</span>
+            <span class="comment">% parameters according to the approach described in S. Iadevaia et</span>
+            <span class="comment">% al. Cancer Res 2010;70:6704-6714 and M. Liu, D. Shin, and H. I.</span>
+            <span class="comment">% Kang. International Conference on Information, Communications and</span>
+            <span class="comment">% Signal Processing 2009:1-5.</span>
+
+            newBest = min(state.IndividualBestFvals);
+            <span class="keyword">if</span> isfinite(newBest) &amp;&amp; newBest &lt; bestFvals
+                bestFvals = newBest;
+                state.LastImprovement = state.Iteration;
+                <span class="comment">%state.LastImprovementTime = toc(state.StartTime);</span>
+                adaptiveInertiaCounter = max(0, adaptiveInertiaCounter-1);
+                adaptiveNeighborhoodSize = minNeighborhoodSize;
+            <span class="keyword">else</span>
+                adaptiveInertiaCounter = adaptiveInertiaCounter+1;
+                adaptiveNeighborhoodSize = min(numParticles, adaptiveNeighborhoodSize+minNeighborhoodSize);
+            <span class="keyword">end</span>
+
+            <span class="comment">% Update the inertia coefficient, enforcing limits (Since inertia</span>
+            <span class="comment">% can be negative, enforcing both upper *and* lower bounds after</span>
+            <span class="comment">% multiplying.)</span>
+            <span class="keyword">if</span> adaptiveInertiaCounter &lt; 2
+                adaptiveInertia = max(minInertia, min(maxInertia, 2*adaptiveInertia));
+            <span class="keyword">elseif</span> adaptiveInertiaCounter &gt; 5
+                adaptiveInertia = max(minInertia, min(maxInertia, 0.5*adaptiveInertia));
+            <span class="keyword">end</span>
+
+            <span class="comment">% check to see if any stopping criteria have been met</span>
+<span class="comment">%             [exitFlag, message] = stopParticleswarm(options,state,bestFvalsWindow);</span>
+            [exitFlag, ~] = stopParticleswarm(options,state,bestFvalsWindow);
+<span class="comment">%             output.message = message;</span>
+        <span class="keyword">end</span> <span class="comment">% End while loop</span>
+
+        <span class="comment">% Find and return the best solution</span>
+        [fval,indexBestFval] = min(state.IndividualBestFvals);
+        x = state.IndividualBestPositions(indexBestFval,:);
+
+        <span class="comment">% Update output structure</span>
+<span class="comment">%         iterations = state.Iteration;</span>
+<span class="comment">%         funccount   = state.FunEval;</span>
+<span class="comment">%         output = struct('rngstate', rng, ...</span>
+<span class="comment">%             'iterations', iterations, ...</span>
+<span class="comment">%             'funccount', funccount, ...</span>
+<span class="comment">%             'message', message);</span>
+    <span class="keyword">end</span>
+
+    <span class="keyword">function</span> [lb,ub,msg,exitflag] = checkbound(lbin,ubin,nvars)
+        <span class="comment">%CHECKBOUND Move the initial point within the (valid) bounds.</span>
+        <span class="comment">%   [X,LB,UB,X,FLAG] = CHECKBOUNDS(X0,LB,UB,nvars) checks that the upper and lower</span>
+        <span class="comment">%   bounds are valid (LB &lt;= UB) and the same length as X (pad with -inf/inf</span>
+        <span class="comment">%   if necessary); warn if too long.  Also make LB and UB vectors if not</span>
+        <span class="comment">%   already. Finally, inf in LB or -inf in UB throws an error.</span>
+
+        msg = <span class="string">'Success'</span>;
+        exitflag = 1;
+
+        <span class="comment">% Turn into column vectors</span>
+        lb = lbin(:);
+        ub = ubin(:);
+        lenlb = length(lb);
+        lenub = length(ub);
+
+        <span class="comment">% Check maximum length</span>
+        <span class="keyword">if</span> lenlb &gt; nvars
+            warning(message(<span class="string">'PSO:checkbound:lengthOfLowerBound'</span>));
+            lb = lb(1:nvars);
+            lenlb = nvars;
+        <span class="keyword">elseif</span> lenlb &lt; nvars
+            lb = [lb; -inf*ones(nvars-lenlb,1)];
+            lenlb = nvars;
+        <span class="keyword">end</span>
+
+        <span class="keyword">if</span> lenub &gt; nvars
+            warning(message(<span class="string">'PSO:checkbound:lengthOfUpperBound'</span>));
+            ub = ub(1:nvars);
+            lenub = nvars;
+        <span class="keyword">elseif</span> lenub &lt; nvars
+            ub = [ub; inf*ones(nvars-lenub,1)];
+            lenub = nvars;
+        <span class="keyword">end</span>
+
+        <span class="comment">% Check feasibility of bounds</span>
+        len = min(lenlb,lenub);
+        <span class="keyword">if</span> any( lb( (1:len)' ) &gt; ub( (1:len)' ) )
+            count = full(sum(lb&gt;ub));
+            count = int64(count);
+            <span class="keyword">if</span> count == 1
+                msg=sprintf([<span class="string">'Exiting due to infeasibility:  %i lower bound exceeds the'</span> <span class="keyword">...</span>
+                    <span class="string">' corresponding upper bound.'</span>],count);
+            <span class="keyword">else</span>
+                msg=sprintf([<span class="string">'Exiting due to infeasibility:  %i lower bounds exceed the'</span> <span class="keyword">...</span>
+                    <span class="string">' corresponding upper bounds.'</span>],count);
+            <span class="keyword">end</span>
+            exitflag = -2;
+        <span class="keyword">end</span>
+        <span class="comment">% check if -inf in ub or inf in lb</span>
+        <span class="keyword">if</span> any(eq(ub, -inf))
+            error(message(<span class="string">'PSO:checkbound:infUpperBound'</span>));
+        <span class="keyword">elseif</span> any(eq(lb,inf))
+            error(message(<span class="string">'PSO:checkbound:infLowerBound'</span>));
+        <span class="keyword">end</span>
+    <span class="keyword">end</span> <span class="comment">% End of checkbound</span>
+
+    <span class="keyword">function</span> options = initialParticleCheck(options)
+        <span class="comment">% checkfield already checks that InitialSwarm is a matrix with nvars</span>
+        <span class="comment">% columns</span>
+
+        numInitPositions = size(options.InitialSwarm, 1);
+
+        <span class="comment">% No tests if initial positions is empty</span>
+        <span class="keyword">if</span> numInitPositions == 0
+            <span class="keyword">return</span>
+        <span class="keyword">end</span>
+
+        <span class="comment">% Warn if too many positions were specified.</span>
+        numParticles  = options.SwarmSize;
+        <span class="keyword">if</span> numInitPositions &gt; numParticles
+            warning(message(<span class="string">'PSO:particleswarm:initialSwarmLength'</span>));
+            options.InitialSwarm(numParticles+1:numInitPositions,:) = [];
+        <span class="keyword">end</span>
+
+    <span class="keyword">end</span> <span class="comment">% End of initialParticleCheck</span>
+
+
+    <span class="keyword">function</span> state = makeState(nvars, lbMatrix, ubMatrix, objFcn, options)
+        <span class="comment">% Create an initial set of particles and objective function values</span>
+
+        <span class="comment">% makeState needs the vector of bounds, not the expanded matrix.</span>
+        lb_local = lbMatrix(1,:);
+        ub_local = ubMatrix(1,:);
+
+        <span class="comment">% A variety of data used in various places</span>
+        state = struct;
+        state.Iteration = 0; <span class="comment">% current generation counter</span>
+        <span class="comment">%state.StartTime = tic; % tic identifier</span>
+        state.StopFlag = false; <span class="comment">% OutputFcns flag to end the optimization</span>
+        state.LastImprovement = 1; <span class="comment">% generation stall counter</span>
+        state.LastImprovementTime = 0; <span class="comment">% stall time counter</span>
+        state.FunEval = 0;
+        numParticles = options.SwarmSize;
+
+        <span class="comment">% If InitialSwarm is partly empty use the creation function to generate</span>
+        <span class="comment">% population (CreationFcn can utilize InitialSwarm)</span>
+        <span class="keyword">if</span> numParticles ~= size(options.InitialSwarm,1)
+            problemStruct = struct;
+            problemStruct.rngstate = [];
+            problemStruct.solver = <span class="string">'particleswarm'</span>;
+            problemStruct.objective = objFcn;
+            problemStruct.lb = lb_local;
+            problemStruct.ub = ub_local;
+            problemStruct.nvars = nvars;
+            problemStruct.options = options;
+
+            Positions = pswcreationuniform(problemStruct);
+        <span class="keyword">else</span> <span class="comment">% the initial swarm was passed in!</span>
+            Positions = options.InitialSwarm;
+        <span class="keyword">end</span>
+
+        <span class="comment">% Enforce bounds</span>
+        <span class="keyword">if</span> any(any(Positions &lt; lbMatrix)) || any(any(Positions &gt; ubMatrix))
+            Positions = max(lbMatrix, Positions);
+            Positions = min(ubMatrix, Positions);
+            <span class="keyword">if</span> options.Verbosity &gt; 1
+                fprintf(getString(message(<span class="string">'PSO:particleswarm:shiftX0ToBnds'</span>)));
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+        <span class="comment">% Initialize velocities by randomly sampling over the smaller of</span>
+        <span class="comment">% options.InitialSwarmSpan or ub-lb. Note that min will be</span>
+        <span class="comment">% InitialSwarmSpan if either lb or ub is not finite.</span>
+        vmax = min(ub_local-lb_local, options.InitialSwarmSpan);
+        Velocities = repmat(-vmax,numParticles,1) + <span class="keyword">...</span>
+            repmat(2*vmax,numParticles,1) .* rand(numParticles,nvars);
+
+        <span class="comment">% Calculate the objective function for all particles.</span>
+        firstFval = objFcn(Positions(1,:));
+        <span class="comment">% User-provided objective function should return a scalar</span>
+        <span class="keyword">if</span> numel(firstFval) ~= 1
+            error(message(<span class="string">'PSO:particleswarm:objectiveCheck'</span>));
+        <span class="keyword">end</span>
+        fvals = fcnvectorizer(objFcn, Positions(2:end,:));
+        <span class="comment">% Concatenate the fvals of the first particle to the rest</span>
+        Fvals = [firstFval; fvals];
+
+        state.FunEval = numParticles;
+
+        state.IndividualBestFvals = Fvals;
+        state.IndividualBestPositions = Positions;
+        state.Velocities = Velocities;
+        state.Positions = Positions;
+        state.Fvals = Fvals;
+    <span class="keyword">end</span> <span class="comment">% End of makeState</span>
+
+    <span class="keyword">function</span> swarm = pswcreationuniform(problemStruct)
+        <span class="comment">%PSWCREATIONUNIFORM Creates the initial positions for PARTICLESWARM algorithm.</span>
+
+        nvars_local = problemStruct.nvars;
+        options = problemStruct.options;
+        <span class="comment">% Determine finite bounds for the initial particles based on the problem's</span>
+        <span class="comment">% bounds and options.InitialSwarmSpan.</span>
+        [lb_local,ub_local] = determinePositionInitBounds(problemStruct.lb, problemStruct.ub, <span class="keyword">...</span>
+            options.InitialSwarmSpan);
+
+        numParticles = options.SwarmSize;
+        numInitPositions = size(options.InitialSwarm, 1);
+        numPositionsToCreate = numParticles - numInitPositions;
+
+        <span class="comment">% Initialize particles to be created</span>
+        swarm = zeros(numParticles,nvars_local);
+
+        <span class="comment">% Use initial particles provided already</span>
+        <span class="keyword">if</span> numInitPositions &gt; 0
+            swarm(1:numInitPositions,:) = options.InitialSwarm;
+        <span class="keyword">end</span>
+
+        <span class="comment">% Create remaining particles, randomly sampling within lb and ub</span>
+        span = ub_local - lb_local;
+        swarm(numInitPositions+1:end,:) = repmat(lb_local,numPositionsToCreate,1) + <span class="keyword">...</span>
+            repmat(span,numPositionsToCreate,1) .* rand(numPositionsToCreate,nvars_local);
+
+        <span class="comment">% Error if any values are not finite</span>
+        <span class="keyword">if</span> ~all(isfinite(swarm(:)))
+            error(message(<span class="string">'PSO:pswcreationuniform:positionNotFinite'</span>));
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="keyword">function</span> [lb,ub] = determinePositionInitBounds(lb,ub,initialSwarmSpan)
+        <span class="comment">% Update lb and ub using positionInitSpan, so that initial bounds are</span>
+        <span class="comment">% always finite</span>
+        lbFinite = isfinite(lb);
+        ubFinite = isfinite(ub);
+        lbInf = ~lbFinite;
+        ubInf = ~ubFinite;
+
+        <span class="comment">% If lb and ub are both finite, do not update the bounds.</span>
+
+        <span class="comment">% If lb &amp; ub are both infinite, center the range around 0.</span>
+        idx = lbInf &amp; ubInf;
+        lb(idx) = -initialSwarmSpan(idx)/2;
+        ub(idx) = initialSwarmSpan(idx)/2;
+
+        <span class="comment">% If only lb is finite, start the range at lb.</span>
+        idx = lbFinite &amp; ubInf;
+        ub(idx) = lb(idx) + initialSwarmSpan(idx);
+
+        <span class="comment">% If only ub is finite, end the range at ub.</span>
+        idx = lbInf &amp; ubFinite;
+        lb(idx) = ub(idx) - initialSwarmSpan(idx);
+    <span class="keyword">end</span>
+
+    <span class="keyword">function</span> fvals = fcnvectorizer(objfcn, X)
+        particle_num = size(X, 1);
+        fvals = zeros(particle_num,1);
+        <span class="keyword">for</span> i = 1:particle_num
+            fvals(i) = objfcn(X(i,:));
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="keyword">function</span> [exitFlag,reasonToStop] = stopParticleswarm(options,state,bestFvalsWindow)
+        iteration = state.Iteration;
+
+        iterationIndex = 1+mod(iteration-1,options.StallIterLimit);
+        bestFval = bestFvalsWindow(iterationIndex);
+        <span class="keyword">if</span> options.Verbosity &gt; 1 &amp;&amp; <span class="keyword">...</span>
+                mod(iteration,options.DisplayInterval)==0 &amp;&amp; <span class="keyword">...</span>
+                iteration &gt; 0
+            FunEval  = state.FunEval;
+            MeanFval = meanf(state.Fvals);
+            StallGen = iteration  - state.LastImprovement;
+            fprintf(<span class="string">'%5.0f         %7.0f    %12.4g    %12.4g    %5.0f\n'</span>, <span class="keyword">...</span>
+                iteration, FunEval, bestFval, MeanFval, StallGen);
+        <span class="keyword">end</span>
+
+        <span class="comment">% Compute change in fval and individuals in last 'Window' iterations</span>
+        Window = options.StallIterLimit;
+        <span class="keyword">if</span> iteration &gt; Window
+            <span class="comment">% The smallest fval in the window should be bestFval.</span>
+            <span class="comment">% The largest fval in the window should be the oldest one in the</span>
+            <span class="comment">% window. This value is at iterationIndex+1 (or 1).</span>
+            <span class="keyword">if</span> iterationIndex == Window
+                <span class="comment">% The window runs from index 1:iterationIndex</span>
+                maxBestFvalsWindow = bestFvalsWindow(1);
+            <span class="keyword">else</span>
+                <span class="comment">% The window runs from [iterationIndex+1:end, 1:iterationIndex]</span>
+                maxBestFvalsWindow = bestFvalsWindow(iterationIndex+1);
+            <span class="keyword">end</span>
+            funChange = abs(maxBestFvalsWindow-bestFval)/max(1,abs(bestFval));
+        <span class="keyword">else</span>
+            funChange = Inf;
+        <span class="keyword">end</span>
+
+        reasonToStop = <span class="string">''</span>;
+        exitFlag = 0;
+        <span class="keyword">if</span> state.Iteration &gt;= options.MaxIter
+            reasonToStop = getString(message(<span class="string">'PSO:particleswarm:ExitMaxIter'</span>));
+            exitFlag = 2;
+<span class="comment">%         elseif toc(state.StartTime) &gt; options.MaxTime</span>
+<span class="comment">%             reasonToStop = getString(message('PSO:particleswarm:ExitMaxTime'));</span>
+<span class="comment">%             exitFlag = -5;</span>
+<span class="comment">%         elseif (toc(state.StartTime)-state.LastImprovementTime) &gt; options.StallTimeLimit</span>
+<span class="comment">%             reasonToStop = getString(message('PSO:particleswarm:ExitStallTimeLimit'));</span>
+<span class="comment">%             exitFlag = -4;</span>
+        <span class="keyword">elseif</span> bestFval &lt;= options.ObjectiveLimit
+            reasonToStop = getString(message(<span class="string">'PSO:particleswarm:ExitObjectiveLimit'</span>));
+            exitFlag = -3;
+        <span class="keyword">elseif</span> state.StopFlag
+            reasonToStop = getString(message(<span class="string">'PSO:particleswarm:ExitOutputPlotFcn'</span>));
+            exitFlag = -1;
+        <span class="keyword">elseif</span> funChange &lt;= options.TolFunValue
+            reasonToStop = getString(message(<span class="string">'PSO:particleswarm:ExitTolFun'</span>));
+            exitFlag = 1;
+        <span class="keyword">end</span>
+
+        <span class="keyword">if</span> ~isempty(reasonToStop) &amp;&amp; options.Verbosity &gt; 0
+            fprintf(<span class="string">'%s\n'</span>,reasonToStop);
+            <span class="keyword">return</span>
+        <span class="keyword">end</span>
+
+        <span class="comment">% Print header again</span>
+        <span class="keyword">if</span> options.Verbosity &gt; 1 &amp;&amp; rem(iteration,30*options.DisplayInterval)==0 &amp;&amp; iteration &gt; 0
+            fprintf(<span class="string">'\n                                 Best            Mean     Stall\n'</span>);
+            fprintf(<span class="string">'Iteration     f-count            f(x)            f(x)    Iterations\n'</span>);
+        <span class="keyword">end</span>
+
+    <span class="keyword">end</span>
+
+    <span class="keyword">function</span> m = meanf(x)
+        tfValid = ~isnan(x);
+        n = sum(tfValid);
+        <span class="keyword">if</span> n==0
+            <span class="comment">% prevent divideByZero warnings</span>
+            m = NaN;
+        <span class="keyword">else</span>
+            <span class="comment">% Sum up non-NaNs, and divide by the number of non-NaNs.</span>
+            m = sum(x(tfValid)) ./ n;
+        <span class="keyword">end</span>
+    <span class="keyword">end</span> <span class="comment">% End of StopParticleswarm</span>
+
+    <span class="keyword">function</span> msg_str = getString(msg_obj)
+        <span class="comment">%msg_str = msg_obj.Identifier;</span>
+        msg_str = msg_obj;
+    <span class="keyword">end</span>
+</pre><pre class="codeinput"><span class="keyword">end</span>
+
+<span class="keyword">function</span> [w_new, v_new] = multipliers_update(x_k, w_k, v_k, <span class="keyword">...</span>
+    eqCons, eqConsNum, ineqCons, ineqConsNum, sigma)
+<span class="comment">% Allocate memory</span>
+w_new = w_k;
+v_new = v_k;
+<span class="keyword">for</span> i = 1:7
+    w_new(i) = max([0, w_k(i) - sigma.*ineqCons{i}(x_k)]);
+<span class="keyword">end</span>
+<span class="keyword">for</span> j = 1:0
+    v_new(j) = v_k(j) - sigma.*eqCons{j}(x_k);
+<span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="keyword">function</span> norm_h = norm_eqCons(x_k, eqCons, eqConsNum)
+H = zeros(0, 1, <span class="string">'double'</span>);
+<span class="keyword">for</span> i = 1:0
+    H(i) = eqCons{i}(x_k);
+<span class="keyword">end</span>
+norm_h = norm(H);
+<span class="keyword">end</span>
+
+<span class="keyword">function</span> str_o = message(str)
+str_o = str;
+<span class="keyword">end</span>
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+function [x, fval] = ALM_solver_for_Maximizing_MPLIP(amp, phase, ...
+    relFreqConst,numSources,xcoords, ycoords, zcoords, sigma, ...
+    epsilon, alpha, beta, maxIter, lb, ub)
+% Maximizing Monochromatic Polarized Light Interference Patterns Using
+% Augmented Lagrangian Method.
+
+%#codegen
+
+%% Optimization problem
+% Construct the objective function
+origins = [xcoords ycoords zcoords];
+
+    function f = objFcn(x)
+        f = - waveIntensity(x, amp,phase, ...
+            relFreqConst,numSources,origins);
+    end
+
+% Construct the inequality constraints
+ineqConsNum = 7;
+% ineqCons = cell(ineqConsNum, 1);
+
+g1 = @(x,y)  (x-xcoords(1)).^2 + (y-ycoords(1)).^2 - 9;
+g2 = @(x,y)  (x-xcoords(2)).^2 + (y-ycoords(2)).^2 - 9;
+g3 = @(x,y)  (x-xcoords(3)).^2 + (y-ycoords(3)).^2 - 9;
+% ineqCons{1} = @(x)-g1(x(1), x(2));
+% ineqCons{2} = @(x)-g2(x(1), x(2));
+% ineqCons{3} = @(x)-g3(x(1), x(2));
+%
+% ineqCons{4} = @(x)(x(1) - lb(1));
+% ineqCons{5} = @(x)(ub(1) - x(1));
+% ineqCons{6} = @(x)(x(2) - lb(2));
+% ineqCons{7} = @(x)(ub(2) - x(2));
+ineqCons = {@(x)-g1(x(1), x(2)),...
+    @(x)-g2(x(1), x(2)), ...
+    @(x)-g3(x(1), x(2)), ...
+    @(x)(x(1) - lb(1)), ...
+    @(x)(ub(1) - x(1)), ...
+    @(x)(x(2) - lb(2)), ...
+    @(x)(ub(2) - x(2))};
+
+% Construct the equality constraints
+eqConsNum = 0;
+eqCons = {};
+
+nvars = 2;
+w = ones(ineqConsNum, 1).*1.3;
+v = ones(eqConsNum, 1).*1.3;
+
+%% ALM algorithm kernel
+% Step 1
+% Initialize the epoch flag to 1.
+x0 = [0.5; 0.5];
+x = x0;
+fval =  0;
+k = 1;
+x_k_1 = x0;
+w_k = w;
+v_k = v;
+sigma_k = sigma;
+
+% Step 2
+while (k <=maxIter)
+    % Construct the Augmented Lagrangian Function as the objective function of
+    % a unconstrained optimization problem.
+    [x_k, ~, ~] = PSO_alg_solver(w_k, v_k, sigma_k, nvars, lb, ub, 'off');
+    
+    % Step 3
+    % Check the stop condition
+    norm_h_k = norm_eqCons(x_k, eqCons, eqConsNum);
+    if norm_h_k < epsilon
+        x = [x_k(1);x_k(2)];
+        fval = objFcn(x_k);
+        break;
+    end
+    
+    % Step 4
+    % Adapt the sigma
+    % Check the stop condition
+    norm_h_k_1 = norm_eqCons(x_k_1, eqCons, eqConsNum);
+    if norm_h_k >= beta*norm_h_k_1
+        sigma_k = alpha.*sigma_k;
+    end
+    
+    % Step 5
+    % Update the multipliers
+    [w_new, v_new] = multipliers_update(x_k, w_k, v_k, ...
+        eqCons, eqConsNum, ineqCons, ineqConsNum, sigma_k);
+    w_k = w_new;
+    v_k = v_new;
+    
+    x_k_1 = [x_k(1);x_k(2)];
+    
+    k = k + 1;
+end
+
+%% Formulation of augmented Lagrangian function
+    function f = Lagrange_Fcn(x, w, v, sigma)
+        G = zeros(7, 1, 'double');
+        H = zeros(0, 1, 'double');
+        for i = 1:7
+            G(i) = (max([0, w(i) - sigma.*ineqCons{i}(x)])).^2 - w(i).^2;
+        end
+        for j = 1:0
+            H(j) = eqCons{j}(x);
+        end
+        f = objFcn(x) + (1./(2*sigma)).*(sum(G)) ...
+            - sum(v.*H) + (sigma./2).*sum(H.^2);
+    end
+
+%% PSO solver for unconstrained problem
+    function [x, fval, exitFlag] = PSO_alg_solver(w_k, v_k, sigma_k, ...
+            nvars, lb, ub, Display)
+        % Construct augmented Lagrangian function.
+        objFcn = @(x)Lagrange_Fcn(x, w_k, v_k, sigma_k);
+        
+%         output = struct('rngstate', rng, 'iterations', 0, 'funccount', 0, 'message', ' ');
+%         output = struct('rngstate', rng, 'iterations', 0, 'funccount', 0);
+        [x,fval] = deal([]);
+        
+        options = struct;
+        % options.Display = 'iter';
+        options.DisplayInterval = 1;
+        % switch  options.Display
+        switch  Display
+            case {'off','none'}
+                options.Verbosity = 0;
+            case 'final'
+                options.Verbosity = 1;
+            case 'iter'
+                options.Verbosity = 2;
+            otherwise
+                options.Verbosity = 0;
+        end
+        
+        options.InertiaRange = [0.1000 1.1000];
+        options.InitialSwarm = [];
+        options.SwarmSize = min(500, 100*nvars);
+        options.InitialSwarmSpan = 2000;
+        options.MaxIter = 200*nvars;
+        options.MaxTime = Inf;
+        options.MinFractionNeighbors = 0.2500;
+        options.ObjectiveLimit = -Inf;
+        options.SelfAdjustment = 1.4900;
+        options.SocialAdjustment = 1.4900;
+        options.StallIterLimit = 20;
+        options.StallTimeLimit = Inf;
+        options.TolFun = 1.0000e-6;
+        options.TolFunValue = 1.0000e-6;
+        
+        % Args lb & ub
+        [lbColumn, ubColumn, msg, exitFlag] = checkbound(lb, ub, nvars);
+        % checkbound returns column vectors, but we to convert that to a row vector
+        % and repeat it across SwarmSize rows.
+        lbRow = lbColumn';
+        ubRow = ubColumn';
+        if exitFlag < 0
+            % output.message = msg; % This is the first message, so no need to append
+            if options.Verbosity > 0
+                fprintf('%s\n', msg);
+            end
+            return
+        end
+        
+        % Perform check on initial population, fvals, and range
+        options = initialParticleCheck(options);
+        
+        exitFlag = 0;
+        
+        % Get algorithmic options
+        numParticles = options.SwarmSize;
+        cSelf = options.SelfAdjustment;
+        cSocial = options.SocialAdjustment;
+        minNeighborhoodSize = max(2,floor(numParticles*options.MinFractionNeighbors));
+        minInertia = options.InertiaRange(1);
+        maxInertia = options.InertiaRange(2);
+        lbMatrix = repmat(lbRow, numParticles, 1);
+        ubMatrix = repmat(ubRow, numParticles, 1);
+        
+        
+        % Create initial state: particle positions & velocities, fvals, status data
+        state = makeState(nvars,lbMatrix,ubMatrix,objFcn,options);
+        bestFvals = min(state.Fvals);
+        % Create a vector to store the last StallIterLimit bestFvals.
+        % bestFvalsWindow is a circular buffer, so that the value from the i'th
+        % iteration is stored in element with index mod(i-1,StallIterLimit)+1.
+        bestFvalsWindow = nan(options.StallIterLimit, 1);
+        
+        % Initialize adaptive parameters:
+        %   initial inertia = maximum *magnitude* inertia
+        %   initial neighborhood size = minimum neighborhood size
+        adaptiveInertiaCounter = 0;
+        if all(options.InertiaRange >= 0)
+            adaptiveInertia = maxInertia;
+        elseif all(options.InertiaRange <= 0)
+            adaptiveInertia = minInertia;
+        else
+            % checkfield should prevent InertiaRange from having positive and
+            % negative vlaues.
+            assert(false, 'PSO:particleswarm:invalidInertiaRange', ...
+                'The InertiaRange option should not contain both positive and negative numbers.');
+        end
+        adaptiveNeighborhoodSize = minNeighborhoodSize;
+        
+        % Setup display header
+        if  options.Verbosity > 1
+            fprintf('\n                                 Best            Mean     Stall\n');
+            fprintf(  'Iteration     f-count            f(x)            f(x)    Iterations\n');
+            fprintf('%5.0f         %7.0f    %12.4g    %12.4g    %5.0f\n', ...
+                0, state.FunEval, bestFvals, mean(state.Fvals), 0);
+        end
+        
+        % Run the main loop until some exit condition becomes true
+%         message = '';
+        while (~exitFlag)
+            state.Iteration = state.Iteration + 1;
+            
+            % Generate a random neighborhood for each particle that includes
+            % the particle itself
+            neighborIndex = zeros(numParticles, adaptiveNeighborhoodSize);
+            neighborIndex(:, 1) = 1:numParticles; % First neighbor is self
+            for i = 1:numParticles
+                % Determine random neighbors that exclude the particle itself,
+                % which is (numParticles-1) particles
+                neighbors = randperm(numParticles-1, adaptiveNeighborhoodSize-1);
+                % Add 1 to indicies that are >= current particle index
+                iShift = neighbors >= i;
+                neighbors(iShift) = neighbors(iShift) + 1;
+                neighborIndex(i,2:end) = neighbors;
+            end
+            % Identify the best neighbor
+            [~, bestRowIndex] = min(state.IndividualBestFvals(neighborIndex), [], 2);
+            % Create the linear index into neighborIndex
+            bestLinearIndex = (bestRowIndex.'-1).*numParticles + (1:numParticles);
+            bestNeighborIndex = neighborIndex(bestLinearIndex);
+            randSelf = rand(numParticles, nvars);
+            randSocial = rand(numParticles, nvars);
+            
+            % Note that velocities and positions can become infinite if the
+            % inertia range is too large or if the objective function is badly
+            % behaved.
+            
+            % Update the velocities
+            newVelocities = adaptiveInertia*state.Velocities + ...
+                cSelf*randSelf.*(state.IndividualBestPositions-state.Positions) + ...
+                cSocial*randSocial.*(state.IndividualBestPositions(bestNeighborIndex, :)-state.Positions);
+            tfValid = all(isfinite(newVelocities), 2);
+            state.Velocities(tfValid,:) = newVelocities(tfValid,:);
+            % Update the positions
+            newPopulation = state.Positions + state.Velocities;
+            tfInvalid = ~isfinite(newPopulation);
+            newPopulation(tfInvalid) = state.Positions(tfInvalid);
+            % Enforce bounds, setting the corresponding velocity component to
+            % zero if a particle encounters a lower/upper bound
+            tfInvalid = newPopulation < lbMatrix;
+            if any(tfInvalid(:))
+                newPopulation(tfInvalid) = lbMatrix(tfInvalid);
+                state.Velocities(tfInvalid) = 0;
+            end
+            tfInvalid = newPopulation > ubMatrix;
+            if any(tfInvalid(:))
+                newPopulation(tfInvalid) = ubMatrix(tfInvalid);
+                state.Velocities(tfInvalid) = 0;
+            end
+            state.Positions = newPopulation;
+            
+            % Objective evaluation
+            state.Fvals = fcnvectorizer(objFcn, state.Positions);
+            state.FunEval = state.FunEval + numParticles;
+            
+            % Remember the best fvals and positions
+            tfImproved = state.Fvals < state.IndividualBestFvals;
+            state.IndividualBestFvals(tfImproved) = state.Fvals(tfImproved);
+            state.IndividualBestPositions(tfImproved, :) = state.Positions(tfImproved, :);
+            bestFvalsWindow(1+mod(state.Iteration-1,options.StallIterLimit)) = min(state.IndividualBestFvals);
+            
+            % Keep track of improvement in bestFvals and update the adaptive
+            % parameters according to the approach described in S. Iadevaia et
+            % al. Cancer Res 2010;70:6704-6714 and M. Liu, D. Shin, and H. I.
+            % Kang. International Conference on Information, Communications and
+            % Signal Processing 2009:1-5.
+            
+            newBest = min(state.IndividualBestFvals);
+            if isfinite(newBest) && newBest < bestFvals
+                bestFvals = newBest;
+                state.LastImprovement = state.Iteration;
+                %state.LastImprovementTime = toc(state.StartTime);
+                adaptiveInertiaCounter = max(0, adaptiveInertiaCounter-1);
+                adaptiveNeighborhoodSize = minNeighborhoodSize;
+            else
+                adaptiveInertiaCounter = adaptiveInertiaCounter+1;
+                adaptiveNeighborhoodSize = min(numParticles, adaptiveNeighborhoodSize+minNeighborhoodSize);
+            end
+            
+            % Update the inertia coefficient, enforcing limits (Since inertia
+            % can be negative, enforcing both upper *and* lower bounds after
+            % multiplying.)
+            if adaptiveInertiaCounter < 2
+                adaptiveInertia = max(minInertia, min(maxInertia, 2*adaptiveInertia));
+            elseif adaptiveInertiaCounter > 5
+                adaptiveInertia = max(minInertia, min(maxInertia, 0.5*adaptiveInertia));
+            end
+            
+            % check to see if any stopping criteria have been met
+%             [exitFlag, message] = stopParticleswarm(options,state,bestFvalsWindow);
+            [exitFlag, ~] = stopParticleswarm(options,state,bestFvalsWindow);
+%             output.message = message;
+        end % End while loop
+        
+        % Find and return the best solution
+        [fval,indexBestFval] = min(state.IndividualBestFvals);
+        x = state.IndividualBestPositions(indexBestFval,:);
+        
+        % Update output structure
+%         iterations = state.Iteration;
+%         funccount   = state.FunEval;
+%         output = struct('rngstate', rng, ...
+%             'iterations', iterations, ...
+%             'funccount', funccount, ...
+%             'message', message);
+    end
+
+    function [lb,ub,msg,exitflag] = checkbound(lbin,ubin,nvars)
+        %CHECKBOUND Move the initial point within the (valid) bounds.
+        %   [X,LB,UB,X,FLAG] = CHECKBOUNDS(X0,LB,UB,nvars) checks that the upper and lower
+        %   bounds are valid (LB <= UB) and the same length as X (pad with -inf/inf
+        %   if necessary); warn if too long.  Also make LB and UB vectors if not
+        %   already. Finally, inf in LB or -inf in UB throws an error.
+        
+        msg = 'Success';
+        exitflag = 1;
+        
+        % Turn into column vectors
+        lb = lbin(:);
+        ub = ubin(:);
+        lenlb = length(lb);
+        lenub = length(ub);
+        
+        % Check maximum length
+        if lenlb > nvars
+            warning(message('PSO:checkbound:lengthOfLowerBound'));
+            lb = lb(1:nvars);
+            lenlb = nvars;
+        elseif lenlb < nvars
+            lb = [lb; -inf*ones(nvars-lenlb,1)];
+            lenlb = nvars;
+        end
+        
+        if lenub > nvars
+            warning(message('PSO:checkbound:lengthOfUpperBound'));
+            ub = ub(1:nvars);
+            lenub = nvars;
+        elseif lenub < nvars
+            ub = [ub; inf*ones(nvars-lenub,1)];
+            lenub = nvars;
+        end
+        
+        % Check feasibility of bounds
+        len = min(lenlb,lenub);
+        if any( lb( (1:len)' ) > ub( (1:len)' ) )
+            count = full(sum(lb>ub));
+            count = int64(count);
+            if count == 1
+                msg=sprintf(['Exiting due to infeasibility:  %i lower bound exceeds the' ...
+                    ' corresponding upper bound.'],count);
+            else
+                msg=sprintf(['Exiting due to infeasibility:  %i lower bounds exceed the' ...
+                    ' corresponding upper bounds.'],count);
+            end
+            exitflag = -2;
+        end
+        % check if -inf in ub or inf in lb
+        if any(eq(ub, -inf))
+            error(message('PSO:checkbound:infUpperBound'));
+        elseif any(eq(lb,inf))
+            error(message('PSO:checkbound:infLowerBound'));
+        end
+    end % End of checkbound
+
+    function options = initialParticleCheck(options)
+        % checkfield already checks that InitialSwarm is a matrix with nvars
+        % columns
+        
+        numInitPositions = size(options.InitialSwarm, 1);
+        
+        % No tests if initial positions is empty
+        if numInitPositions == 0
+            return
+        end
+        
+        % Warn if too many positions were specified.
+        numParticles  = options.SwarmSize;
+        if numInitPositions > numParticles
+            warning(message('PSO:particleswarm:initialSwarmLength'));
+            options.InitialSwarm(numParticles+1:numInitPositions,:) = [];
+        end
+        
+    end % End of initialParticleCheck
+
+
+    function state = makeState(nvars, lbMatrix, ubMatrix, objFcn, options)
+        % Create an initial set of particles and objective function values
+        
+        % makeState needs the vector of bounds, not the expanded matrix.
+        lb_local = lbMatrix(1,:);
+        ub_local = ubMatrix(1,:);
+        
+        % A variety of data used in various places
+        state = struct;
+        state.Iteration = 0; % current generation counter
+        %state.StartTime = tic; % tic identifier
+        state.StopFlag = false; % OutputFcns flag to end the optimization
+        state.LastImprovement = 1; % generation stall counter
+        state.LastImprovementTime = 0; % stall time counter
+        state.FunEval = 0;
+        numParticles = options.SwarmSize;
+        
+        % If InitialSwarm is partly empty use the creation function to generate
+        % population (CreationFcn can utilize InitialSwarm)
+        if numParticles ~= size(options.InitialSwarm,1)
+            problemStruct = struct;
+            problemStruct.rngstate = [];
+            problemStruct.solver = 'particleswarm';
+            problemStruct.objective = objFcn;
+            problemStruct.lb = lb_local;
+            problemStruct.ub = ub_local;
+            problemStruct.nvars = nvars;
+            problemStruct.options = options;
+            
+            Positions = pswcreationuniform(problemStruct);
+        else % the initial swarm was passed in!
+            Positions = options.InitialSwarm;
+        end
+        
+        % Enforce bounds
+        if any(any(Positions < lbMatrix)) || any(any(Positions > ubMatrix))
+            Positions = max(lbMatrix, Positions);
+            Positions = min(ubMatrix, Positions);
+            if options.Verbosity > 1
+                fprintf(getString(message('PSO:particleswarm:shiftX0ToBnds')));
+            end
+        end
+        
+        % Initialize velocities by randomly sampling over the smaller of
+        % options.InitialSwarmSpan or ub-lb. Note that min will be
+        % InitialSwarmSpan if either lb or ub is not finite.
+        vmax = min(ub_local-lb_local, options.InitialSwarmSpan);
+        Velocities = repmat(-vmax,numParticles,1) + ...
+            repmat(2*vmax,numParticles,1) .* rand(numParticles,nvars);
+        
+        % Calculate the objective function for all particles.
+        firstFval = objFcn(Positions(1,:));
+        % User-provided objective function should return a scalar
+        if numel(firstFval) ~= 1
+            error(message('PSO:particleswarm:objectiveCheck'));
+        end
+        fvals = fcnvectorizer(objFcn, Positions(2:end,:));
+        % Concatenate the fvals of the first particle to the rest
+        Fvals = [firstFval; fvals];
+        
+        state.FunEval = numParticles;
+        
+        state.IndividualBestFvals = Fvals;
+        state.IndividualBestPositions = Positions;
+        state.Velocities = Velocities;
+        state.Positions = Positions;
+        state.Fvals = Fvals;
+    end % End of makeState
+
+    function swarm = pswcreationuniform(problemStruct)
+        %PSWCREATIONUNIFORM Creates the initial positions for PARTICLESWARM algorithm.
+        
+        nvars_local = problemStruct.nvars;
+        options = problemStruct.options;
+        % Determine finite bounds for the initial particles based on the problem's
+        % bounds and options.InitialSwarmSpan.
+        [lb_local,ub_local] = determinePositionInitBounds(problemStruct.lb, problemStruct.ub, ...
+            options.InitialSwarmSpan);
+        
+        numParticles = options.SwarmSize;
+        numInitPositions = size(options.InitialSwarm, 1);
+        numPositionsToCreate = numParticles - numInitPositions;
+        
+        % Initialize particles to be created
+        swarm = zeros(numParticles,nvars_local);
+        
+        % Use initial particles provided already
+        if numInitPositions > 0
+            swarm(1:numInitPositions,:) = options.InitialSwarm;
+        end
+        
+        % Create remaining particles, randomly sampling within lb and ub
+        span = ub_local - lb_local;
+        swarm(numInitPositions+1:end,:) = repmat(lb_local,numPositionsToCreate,1) + ...
+            repmat(span,numPositionsToCreate,1) .* rand(numPositionsToCreate,nvars_local);
+        
+        % Error if any values are not finite
+        if ~all(isfinite(swarm(:)))
+            error(message('PSO:pswcreationuniform:positionNotFinite'));
+        end
+    end
+
+    function [lb,ub] = determinePositionInitBounds(lb,ub,initialSwarmSpan)
+        % Update lb and ub using positionInitSpan, so that initial bounds are
+        % always finite
+        lbFinite = isfinite(lb);
+        ubFinite = isfinite(ub);
+        lbInf = ~lbFinite;
+        ubInf = ~ubFinite;
+        
+        % If lb and ub are both finite, do not update the bounds.
+        
+        % If lb & ub are both infinite, center the range around 0.
+        idx = lbInf & ubInf;
+        lb(idx) = -initialSwarmSpan(idx)/2;
+        ub(idx) = initialSwarmSpan(idx)/2;
+        
+        % If only lb is finite, start the range at lb.
+        idx = lbFinite & ubInf;
+        ub(idx) = lb(idx) + initialSwarmSpan(idx);
+        
+        % If only ub is finite, end the range at ub.
+        idx = lbInf & ubFinite;
+        lb(idx) = ub(idx) - initialSwarmSpan(idx);
+    end
+
+    function fvals = fcnvectorizer(objfcn, X)
+        particle_num = size(X, 1);
+        fvals = zeros(particle_num,1);
+        for i = 1:particle_num
+            fvals(i) = objfcn(X(i,:));
+        end
+    end
+
+    function [exitFlag,reasonToStop] = stopParticleswarm(options,state,bestFvalsWindow)
+        iteration = state.Iteration;
+        
+        iterationIndex = 1+mod(iteration-1,options.StallIterLimit);
+        bestFval = bestFvalsWindow(iterationIndex);
+        if options.Verbosity > 1 && ...
+                mod(iteration,options.DisplayInterval)==0 && ...
+                iteration > 0
+            FunEval  = state.FunEval;
+            MeanFval = meanf(state.Fvals);
+            StallGen = iteration  - state.LastImprovement;
+            fprintf('%5.0f         %7.0f    %12.4g    %12.4g    %5.0f\n', ...
+                iteration, FunEval, bestFval, MeanFval, StallGen);
+        end
+        
+        % Compute change in fval and individuals in last 'Window' iterations
+        Window = options.StallIterLimit;
+        if iteration > Window
+            % The smallest fval in the window should be bestFval.
+            % The largest fval in the window should be the oldest one in the
+            % window. This value is at iterationIndex+1 (or 1).
+            if iterationIndex == Window
+                % The window runs from index 1:iterationIndex
+                maxBestFvalsWindow = bestFvalsWindow(1);
+            else
+                % The window runs from [iterationIndex+1:end, 1:iterationIndex]
+                maxBestFvalsWindow = bestFvalsWindow(iterationIndex+1);
+            end
+            funChange = abs(maxBestFvalsWindow-bestFval)/max(1,abs(bestFval));
+        else
+            funChange = Inf;
+        end
+        
+        reasonToStop = '';
+        exitFlag = 0;
+        if state.Iteration >= options.MaxIter
+            reasonToStop = getString(message('PSO:particleswarm:ExitMaxIter'));
+            exitFlag = 2;
+%         elseif toc(state.StartTime) > options.MaxTime
+%             reasonToStop = getString(message('PSO:particleswarm:ExitMaxTime'));
+%             exitFlag = -5;
+%         elseif (toc(state.StartTime)-state.LastImprovementTime) > options.StallTimeLimit
+%             reasonToStop = getString(message('PSO:particleswarm:ExitStallTimeLimit'));
+%             exitFlag = -4;
+        elseif bestFval <= options.ObjectiveLimit
+            reasonToStop = getString(message('PSO:particleswarm:ExitObjectiveLimit'));
+            exitFlag = -3;
+        elseif state.StopFlag
+            reasonToStop = getString(message('PSO:particleswarm:ExitOutputPlotFcn'));
+            exitFlag = -1;
+        elseif funChange <= options.TolFunValue
+            reasonToStop = getString(message('PSO:particleswarm:ExitTolFun'));
+            exitFlag = 1;
+        end
+        
+        if ~isempty(reasonToStop) && options.Verbosity > 0
+            fprintf('%s\n',reasonToStop);
+            return
+        end
+        
+        % Print header again
+        if options.Verbosity > 1 && rem(iteration,30*options.DisplayInterval)==0 && iteration > 0
+            fprintf('\n                                 Best            Mean     Stall\n');
+            fprintf('Iteration     f-count            f(x)            f(x)    Iterations\n');
+        end
+        
+    end
+
+    function m = meanf(x)
+        tfValid = ~isnan(x);
+        n = sum(tfValid);
+        if n==0
+            % prevent divideByZero warnings
+            m = NaN;
+        else
+            % Sum up non-NaNs, and divide by the number of non-NaNs.
+            m = sum(x(tfValid)) ./ n;
+        end
+    end % End of StopParticleswarm
+
+    function msg_str = getString(msg_obj)
+        %msg_str = msg_obj.Identifier;
+        msg_str = msg_obj;
+    end
+
+end
+
+function [w_new, v_new] = multipliers_update(x_k, w_k, v_k, ...
+    eqCons, eqConsNum, ineqCons, ineqConsNum, sigma)
+% Allocate memory
+w_new = w_k;
+v_new = v_k;
+for i = 1:7
+    w_new(i) = max([0, w_k(i) - sigma.*ineqCons{i}(x_k)]);
+end
+for j = 1:0
+    v_new(j) = v_k(j) - sigma.*eqCons{j}(x_k);
+end
+end
+
+function norm_h = norm_eqCons(x_k, eqCons, eqConsNum)
+H = zeros(0, 1, 'double');
+for i = 1:0
+    H(i) = eqCons{i}(x_k);
+end
+norm_h = norm(H);
+end
+
+function str_o = message(str)
+str_o = str;
+end
+##### SOURCE END #####
+--></body></html>
