@@ -21,6 +21,8 @@ permalink: /portfolio/portfolio-1
     2017 The Second-class Scholarship for Innovation Offered by Ministry of Industry and Information Technology (MIIT) of the Chinese Government
 + 2017年中国智能交通协会科学技术奖一等奖(学生第1完成人/排名6)
     2017 The First-class Science and Technology Prize of China Intelligent Transportation Systems Assoication
++ 2017世界智能驾驶挑战赛自动驾驶组最佳网联奖
+    2017 The Best Award for Connected Vehicle Technology Contest in the World Intelligent Drive Challenge（WIDC)
 
 ## <a name="2016"></a>2016
 
