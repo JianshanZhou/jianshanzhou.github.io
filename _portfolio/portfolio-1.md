@@ -4,6 +4,13 @@ collection: portfolio
 permalink: /portfolio/portfolio-1
 ---
 
+## <a name="2019"></a>2019
+
++ 2019博士研究生国家奖学金
+    2019 National Scholarship for Doctoral Students
++ 2019世界智能驾驶挑战赛自动驾驶-乡村越野领先奖
+    2019 The Leading Award for Self-Driving Contest in the World Intelligent Drive Challenge（WIDC)
+
 ## <a name="2018"></a>2018
 
 + 2018年北京航空航天大学十佳博士研究生称号
