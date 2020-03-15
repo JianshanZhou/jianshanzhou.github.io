@@ -1,12 +1,14 @@
 ---
 title: "Channel access optimization with adaptive congestion pricing for cognitive vehicular networks: an evolutionary game approach"
 collection: journalpapers
-permalink: /journalpapers/2019-02-25-journal-paper-019
+permalink: /journalpapers/2020-04-01-journal-paper-001
 excerpt: 'Authors: Tian, D., <b>Zhou, J.</b>, Wang, Y., Sheng, Z., Duan, X., & Leung, V. C. M.'
 date: 2019-02-25
-venue: 'IEEE Transactions on Mobile Computing. On page(s): 1-8 Print ISSN: 1536-1233 Online ISSN: 1536-1233'
+venue: 'IEEE Transactions on Mobile Computing, vol. 19, no. 4, pp. 803-820, 1 April 2020.
+doi: 10.1109/TMC.2019.2901471'
 paperurl: 'https://ieeexplore.ieee.org/document/8651307'
-citation: 'Tian, D., <b>Zhou, J.</b>, Wang, Y., Sheng, Z., Duan, X., & Leung, V. C. M. (2019). Channel access optimization with adaptive congestion pricing for cognitive vehicular networks: an evolutionary game approach. IEEE Transactions on Mobile Computing. On page(s): 1-8 Print ISSN: 1536-1233 Online ISSN: 1536-1233 Digital Object Identifier: 10.1109/TMC.2019.2901471'
+citation: 'D. Tian, <b>J. Zhou</b>, Y. Wang, Z. Sheng, X. Duan and V. C. M. Leung, "Channel Access Optimization with Adaptive Congestion Pricing for Cognitive Vehicular Networks: An Evolutionary Game Approach," in IEEE Transactions on Mobile Computing, vol. 19, no. 4, pp. 803-820, 1 April 2020.
+doi: 10.1109/TMC.2019.2901471'
 ---
 
 
